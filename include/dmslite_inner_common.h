@@ -26,7 +26,11 @@ extern "C" {
 
 enum DmsAllowedUids {
     FOUNDATION_UID = 7,
+#ifdef __LINUX__
+    SHELL_UID = 0,
+#else
     SHELL_UID = 2,
+#endif
 };
 
 /**

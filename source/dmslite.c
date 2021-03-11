@@ -15,8 +15,6 @@
 
 #include "dmslite.h"
 
-#include <pthread.h>
-
 #include "dmslite_log.h"
 #include "dmslite_msg_parser.h"
 #include "dmslite_session.h"
@@ -122,7 +120,15 @@ static void OnPublishFail(int32_t publishId, PublishFailReason reason)
 
 static void Init()
 {
-    SAMGR_GetInstance()->RegisterFeature(DISTRIBUTED_SCHEDULE_SERVICE, (Feature*) &g_dmslite);
-    SAMGR_GetInstance()->RegisterFeatureApi(DISTRIBUTED_SCHEDULE_SERVICE, DMSLITE_FEATURE, GET_IUNKNOWN(g_dmslite));
+    BOOL result = SAMGR_GetInstance()->RegisterFeature(DISTRIBUTED_SCHEDULE_SERVICE, (Feature*) &g_dmslite);
+    if (!result) {
+        HILOGE("[dms register feature failed]");
+    }
+
+    result = SAMGR_GetInstance()->RegisterFeatureApi(DISTRIBUTED_SCHEDULE_SERVICE,
+        DMSLITE_FEATURE, GET_IUNKNOWN(g_dmslite));
+    if (!result) {
+        HILOGE("[dms register feature api failed]");
+    }
 }
 SYS_FEATURE_INIT(Init);

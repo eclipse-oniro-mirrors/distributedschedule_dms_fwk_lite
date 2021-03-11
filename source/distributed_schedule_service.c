@@ -15,8 +15,6 @@
 
 #include "distributed_schedule_service.h"
 
-#include <pthread.h>
-
 #include "distributed_service_interface.h"
 #include "dmslite_log.h"
 
@@ -54,7 +52,6 @@ static BOOL Initialize(Service *service, Identity identity)
     }
 
     ((DistributedService*) service)->identity = identity;
-    (void) pthread_setname_np(pthread_self(), DISTRIBUTED_SCHEDULE_SERVICE);
     return TRUE;
 }
 
@@ -82,7 +79,7 @@ static TaskConfig GetTaskConfig(Service *service)
 
 static void Init()
 {
-    SAMGR_GetInstance()->RegisterService((Service *)&g_distributedService);
-    HILOGD("[dms service start success]");
+    BOOL result = SAMGR_GetInstance()->RegisterService((Service *)&g_distributedService);
+    HILOGI("[dms service start %s]", result ? "success" : "failed");
 }
 SYS_SERVICE_INIT(Init);

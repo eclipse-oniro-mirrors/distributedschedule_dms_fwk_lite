@@ -25,7 +25,7 @@
 #include "ohos_errno.h"
 #include "session.h"
 
-#define DMS_SESSION_NAME "dms"
+#define DMS_SESSION_NAME "com.huawei.harmonyos.foundation.dms"
 #define DMS_MODULE_NAME "dms"
 #define ACCEPT_SESSION_OPEN 0
 
