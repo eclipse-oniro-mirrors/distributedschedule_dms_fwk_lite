@@ -12,18 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OHOS_DISTRIBUTEDSCHEDULE_CHECK_REMOTE_PERMISSION_H
-#define OHOS_DISTRIBUTEDSCHEDULE_CHECK_REMOTE_PERMISSION_H
+
+#ifndef OHOS_DISTRIBUTEDSCHEDULE_PERMISSION_H
+#define OHOS_DISTRIBUTEDSCHEDULE_PERMISSION_H
 
 #include <stdbool.h>
 
-#include "dmslite_msg_parser.h"
+#include "bundle_info.h"
+#include "dmslite_parser.h"
+#include "dmslite_inner_common.h"
 
 /**
 * @brief Checks whether the remote has the permission of interaction with local FAs
-* @param tlvDmsMsgInfo parsed request message from remote
+* @param permissionCheckInfo parsed info required for checking remote permission
 * @return DmsLiteCommonErrorCode
 */
-int8_t CheckRemotePermission(const TlvDmsMsgInfo *tlvDmsMsgInfo);
-
-#endif // OHOS_DISTRIBUTEDSCHEDULE_CHECK_REMOTE_PERMISSION_H
+int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo);
+char* GetCallerSignature(const char *remoteName, BundleInfo *bundleInfo);
+char* GetRemoteSignature(const char *remoteName, BundleInfo *bundleInfo);
+#endif // OHOS_DISTRIBUTEDSCHEDULE_PERMISSION_H

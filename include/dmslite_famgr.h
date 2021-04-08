@@ -16,9 +16,11 @@
 #ifndef OHOS_DMSLITE_FAMGR_H
 #define OHOS_DMSLITE_FAMGR_H
 
-#include "dmslite_inner_common.h"
-
 #include <stdint.h>
+
+#include "dmslite_inner_common.h"
+#include "bundle_manager.h"
+#include "want.h"
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -33,9 +35,11 @@ extern "C" {
 * @param onStartAbilityDone called when ability started done
 * @return DmsLiteCommonErrorCode
 */
-int8_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
+int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone);
 
+int32_t StartRemoteAbility(const Want *want);
+int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo);
 #ifdef __cplusplus
 #if __cplusplus
 }

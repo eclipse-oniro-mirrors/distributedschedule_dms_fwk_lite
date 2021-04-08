@@ -15,157 +15,69 @@
 
 #include "dmslite_famgr.h"
 
-#include "distributed_service_interface.h"
-#include "dmslite_log.h"
+#include <malloc.h>
 
-#include "ability_manager.h"
-#include "ability_service_interface.h"
-#include "iproxy_client.h"
-#include "iunknown.h"
-#include "liteipc_adapter.h"
+#include "dmslite_feature.h"
+#include "dmslite_log.h"
+#include "dmslite_pack.h"
+#include "dmslite_session.h"
+#include "dmslite_tlv_common.h"
+#include "dmslite_utils.h"
+
 #include "ohos_errno.h"
-#include "samgr_lite.h"
 #include "securec.h"
 
-#define INVALID_IPC_TOKEN 0
-#define INVALID_IPC_HANDLE (-1)
-
-static SvcIdentity g_serviceIdentity = {
-    .handle = INVALID_IPC_HANDLE,
-    .token = INVALID_IPC_TOKEN
-};
-
-static StartAbilityCallback g_onStartAbilityDone = NULL;
-
-static int32_t AmsResultCallback(const IpcContext* context, void *ipcMsg, IpcIo *io, void *arg)
+int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
+    StartAbilityCallback onStartAbilityDone)
 {
-    /* Notice: must free ipcMsg, for we don't need ipcMsg here, just free it at first */
-    FreeBuffer(context, ipcMsg);
-
-    HILOGD("[AmsResultCallback called]");
-    if (g_onStartAbilityDone == NULL) {
-        return LITEIPC_EINVAL;
-    }
-
-    ElementName elementName;
-    if (memset_s(&elementName, sizeof(ElementName), 0x00, sizeof(ElementName)) != EOK) {
-        HILOGE("[elementName memset failed]");
-        return LITEIPC_EINVAL;
-    }
-
-    /* the element is not used so far, and deserialize element first before we can get the errcode from io */
-    if (!DeserializeElement(&elementName, io)) {
-        return LITEIPC_EINVAL;
-    }
-    ClearElement(&elementName);
-
-    int8_t errCode = DMS_EC_START_ABILITY_ASYNC_FAILURE;
-    if (IpcIoPopInt32(io) == EC_SUCCESS) {
-        /* this means that FA starts and shows on screen successfully */
-        errCode = DMS_EC_START_ABILITY_ASYNC_SUCCESS;
-    }
-    g_onStartAbilityDone(errCode);
-
-    return LITEIPC_OK;
+    return EC_SUCCESS;
 }
 
-static bool GetAmsInterface(struct AmsInterface **amsInterface)
+int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo)
 {
-    IUnknown *iUnknown = SAMGR_GetInstance()->GetFeatureApi(AMS_SERVICE, AMS_FEATURE);
-    if (iUnknown == NULL) {
-        HILOGE("[GetFeatureApi failed]");
-        return false;
-    }
-
-    int32_t errCode = iUnknown->QueryInterface(iUnknown, DEFAULT_VERSION, (void**) amsInterface);
-    if (errCode != EC_SUCCESS) {
-        HILOGE("[QueryInterface failed]");
-        return false;
-    }
-
-    return true;
-}
-
-static int8_t FillWant(Want *want, const char *bundleName, const char *abilityName)
-{
-    if (memset_s(want, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
+    Want *reqdata = (Want *)DMS_ALLOC(sizeof(Want));
+    if (memset_s(reqdata, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
         HILOGE("[want memset failed]");
         return DMS_EC_FAILURE;
     }
-    ElementName element;
-    if (memset_s(&element, sizeof(ElementName), 0x00, sizeof(ElementName)) != EOK) {
-        HILOGE("[elementName memset failed]");
-        return DMS_EC_FAILURE;
-    }
-
-    if (!(SetElementBundleName(&element, bundleName)
-        && SetElementAbilityName(&element, abilityName)
-        && SetWantElement(want, element)
-        && SetWantSvcIdentity(want, g_serviceIdentity))) {
-        HILOGE("[Fill want failed]");
-        ClearElement(&element);
-        ClearWant(want);
-        return DMS_EC_FAILURE;
-    }
-    ClearElement(&element);
-
-    return DMS_EC_SUCCESS;
+    want->data = (void *)abilityInfo->bundleName;
+    want->dataLength = strlen(abilityInfo->bundleName);
+    reqdata->data = want->data;
+    reqdata->element = want->element;
+    reqdata->dataLength = want->dataLength;
+    Request request = {
+        .msgId = START_REMOTE_ABILITY,
+        .data = (void *)reqdata,
+        .len = sizeof(Want),
+        .msgValue = 0
+    };
+    return SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
 }
 
-static int8_t StartAbilityFromRemoteInner(const char *bundleName, const char *abilityName)
+int32_t StartRemoteAbility(const Want *want)
 {
-    Want want; /* NOTICE: must call ClearWant if filling want sucessfully */
-    if (FillWant(&want, bundleName, abilityName) != DMS_EC_SUCCESS) {
-        return DMS_EC_FILL_WANT_FAILURE;
+    HILOGE("[StartRemoteAbility]");
+    if (want == NULL || want->data == NULL) {
+        return DMS_EC_INVALID_PARAMETER;
     }
-
-    int32_t errCode;
-    uid_t callerUid = getuid();
-    if (callerUid == FOUNDATION_UID) {
-        /* inner-process mode */
-        struct AmsInterface *amsInterface = NULL;
-        if (!GetAmsInterface(&amsInterface)) {
-            HILOGE("[GetAmsInterface query null]");
-            ClearWant(&want);
-            return DMS_EC_GET_AMS_FAILURE;
-        }
-        errCode = amsInterface->StartAbility(&want);
-    } else if (callerUid == SHELL_UID) {
-        /* inter-process mode (mainly called in xts testsuit process started by shell) */
-        errCode = StartAbility(&want);
+    char *bundleName = (char *)want->data;
+    BundleInfo bundleInfo;
+    if (memset_s(&bundleInfo, sizeof(BundleInfo), 0x00, sizeof(BundleInfo)) != EOK) {
+        HILOGE("[bundleInfo memset failed]");
+        return DMS_EC_FAILURE;
+    }
+    GetBundleInfo(bundleName, 0, &bundleInfo);
+    PreprareBuild();
+    PACKET_MARSHALL_HELPER(Uint16, COMMAND_ID, DMS_MSG_CMD_START_FA);
+    PACKET_MARSHALL_HELPER(String, CALLEE_BUNDLE_NAME, want->element->bundleName);
+    PACKET_MARSHALL_HELPER(String, CALLEE_ABILITY_NAME, want->element->abilityName);
+    if (bundleInfo.appId != NULL) {
+        PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, bundleInfo.appId);
     } else {
-        errCode = EC_FAILURE;
+        PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, "");
     }
-    ClearWant(&want);
-
-    if (errCode != EC_SUCCESS) {
-        HILOGE("[Call ams StartAbility failed errCode = %d]", errCode);
-        return DMS_EC_START_ABILITY_SYNC_FAILURE;
-    }
-    /* this just means we send to the ams a request of starting FA successfully */
-    return DMS_EC_START_ABILITY_SYNC_SUCCESS;
-}
-
-int8_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
-    StartAbilityCallback onStartAbilityDone)
-{
-    if (bundleName == NULL || abilityName == NULL) {
-        HILOGE("[Invalid parameters]");
-        return DMS_EC_FAILURE;
-    }
-
-    if (g_serviceIdentity.token == INVALID_IPC_TOKEN) {
-        /* register a callback for notification when ams starts ability successfully */
-        IpcCbMode mode = ONCE;
-        if (RegisterIpcCallback(AmsResultCallback, mode, IPC_WAIT_FOREVER,
-            &g_serviceIdentity, NULL) != EC_SUCCESS) {
-            HILOGE("[RegisterIpcCallback failed]");
-            return DMS_EC_REGISTE_IPC_CALLBACK_FAILURE;
-        }
-    }
-    if (g_onStartAbilityDone == NULL) {
-        g_onStartAbilityDone = onStartAbilityDone;
-    }
-
-    return StartAbilityFromRemoteInner(bundleName, abilityName);
+    HILOGE("[StartRemoteAbility len:%d]", GetPacketSize());
+    int32_t ret = SendDmsMessage(GetPacketBufPtr(), GetPacketSize());
+    CleanBuild();
+    return ret;
 }

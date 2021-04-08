@@ -13,26 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DMSLITE_H
-#define OHOS_DMSLITE_H
+#ifndef OHOS_DMSLITE_MSG_HANDLER_H
+#define OHOS_DMSLITE_MSG_HANDLER_H
 
-#include "service.h"
+#include "dmslite_inner_common.h"
+#include "dmslite_tlv_common.h"
 
-#ifdef __cplusplus
-#if __cplusplus
-extern "C" {
-#endif
-#endif
+int32_t StartAbilityFromRemoteHandler(const TlvNode *tlvHead, StartAbilityCallback onStartAbilityDone);
+int32_t ReplyMsgHandler(const TlvNode *tlvHead);
 
-typedef struct {
-    INHERIT_SERVICE;
-    Identity identity;
-} DistributedService;
-
-#ifdef __cplusplus
-#if __cplusplus
-}
-#endif
-#endif
-
-#endif // OHOS_DMSLITE_H
+#endif // OHOS_DMSLITE_MSG_HANDLER_H

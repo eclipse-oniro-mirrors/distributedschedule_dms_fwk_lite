@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTEDSCHEDULE_MSGPARSER_H
 
 #include "dmslite_inner_common.h"
+#include "dmslite_tlv_common.h"
 
 #include <stdint.h>
 
@@ -26,40 +27,13 @@ extern "C" {
 #endif
 #endif
 
-#define MAX_DMS_MSG_LENGTH  1024
-
-typedef struct {
-    uint8_t commandId;
-    char* calleeBundleName;
-    char* calleeAbilityName;
-    char* callerSignature;
-} TlvDmsMsgInfo;
-
-typedef struct {
-    uint16_t payloadLength;
-    const uint8_t* payload;
-} CommuInterInfo;
-
-enum DmsMsgTlvType {
-    DMS_TLV_TYPE_COMMAND_ID = 0x01,
-    DMS_TLV_TYPE_CALLEE_BUNDLE_NAME,
-    DMS_TLV_TYPE_CALLEE_ABILITY_NAME,
-    DMS_TLV_TYPE_CALLER_SIGNATURE,
-    DMS_TLV_TYPE_MAX
-};
-
-enum DmsCommuMsgCmdType {
-    DMS_MSG_CMD_START_FA = 0x01,
-    DMS_MSG_CMD_MAX
-};
-
 /**
 * @brief The entry of processing commucation or xts testing
-* @param interInfo incoming message from remote
+* @param commuMessage incoming message from remote
 * @param dmsFeatureCallback callbacks for notification
 * @return DmsLiteCommonErrorCode
 */
-int8_t DmsLiteProcessCommuMsg(const CommuInterInfo *interInfo, const IDmsFeatureCallback *dmsFeatureCallback);
+int32_t ProcessCommuMsg(const CommuMessage *commuMessage, const IDmsFeatureCallback *dmsFeatureCallback);
 
 #ifdef __cplusplus
 #if __cplusplus

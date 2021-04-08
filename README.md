@@ -43,7 +43,7 @@ The source code directory structure of the Distributed Scheduler is as follows:
 ```
 ├── BUILD.gn
 ├── include
-│  ├── distributed_schedule_service.h        # Header file for the open APIs provided by the Distributed Scheduler
+│  ├── dmslite.h        # Header file for the open APIs provided by the Distributed Scheduler
 │  ├── dmslite_check_remote_permission.h     # Header file for the permission management module of the Distributed Scheduler
 │  ├── dmslite_famgr.h                       # Header file for the FA management module of the Distributed Scheduler
 │  ├── dmslite_inner_common.h                # Internal common file for the Distributed Scheduler
@@ -52,7 +52,7 @@ The source code directory structure of the Distributed Scheduler is as follows:
 │  ├── dmslite_msg_parser.h                  # Header file for the distributed message parsing module
 │  ├── dmslite_tlv_common.h                  # Header file for the TLV data parsing module
 │  └── dmslite_session.h                     # Header file for the inter-device communication module
-├── readme.md
+├── README.md
 ├── LICENSE
 ├── source
     ├── distributed_schedule_service.c
