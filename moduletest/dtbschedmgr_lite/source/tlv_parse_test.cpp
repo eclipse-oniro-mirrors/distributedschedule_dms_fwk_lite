@@ -80,7 +80,7 @@ HWTEST_F(TlvParseTest, NormalPackage_001, TestSize.Level0) {
  * @tc.require: AR000ENCTK
  */
 
-HWTEST_F(TlvParseTest, NormalPackage_002, TestSize.Level0) {
+HWTEST_F(TlvParseTest, NormalPackage_002, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x82, 0x00, 0x63, 0x6f, 0x6d, 0x2e, 0x61,
         0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c,
@@ -136,7 +136,7 @@ HWTEST_F(TlvParseTest, NormalPackage_002, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000ELTIG
  */
-HWTEST_F(TlvParseTest, AbnormalPackageOutOfOrder_001, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageOutOfOrder_001, TestSize.Level1) {
     uint8_t buffer[] = {
         0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68, 0x75, 0x61, 0x77,
         0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e, 0x63, 0x68, 0x65,
@@ -157,7 +157,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageOutOfOrder_001, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: SR000DRR3L
  */
-HWTEST_F(TlvParseTest, AbnormalPackageOutOfOrder_002, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageOutOfOrder_002, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -178,7 +178,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageOutOfOrder_002, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DGE
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_001, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_001, TestSize.Level1) {
     uint8_t buffer[] = { };
 
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
@@ -194,7 +194,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_001, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE5
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_002, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_002, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00,
     };
@@ -212,7 +212,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_002, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE0
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_003, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_003, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -232,7 +232,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_003, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000DSCRF
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_004, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_004, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -253,7 +253,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_004, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000DSCRB
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_005, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_005, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -276,7 +276,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadNodeNum_005, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: SR000E0DR9
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadLength_001, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadLength_001, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01
     };
@@ -294,7 +294,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadLength_001, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0ECR
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadLength_002, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadLength_002, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x00, 0x03, 0x0d, 0x4d, 0x61, 0x69,
         0x6e, 0x41, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x00,
@@ -315,7 +315,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadLength_002, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE0
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadLength_003, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadLength_003, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -338,7 +338,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadLength_003, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE0
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadLength_004, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadLength_004, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -361,7 +361,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadLength_004, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE0
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadLength_005, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadLength_005, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -386,7 +386,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadLength_005, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE0
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadLength_006, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadLength_006, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
@@ -409,7 +409,7 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadLength_006, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: AR000E0DE0
  */
-HWTEST_F(TlvParseTest, AbnormalPackageBadSource_001, TestSize.Level0) {
+HWTEST_F(TlvParseTest, AbnormalPackageBadSource_001, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x01, 0x00, 0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68,
         0x75, 0x61, 0x77, 0x65, 0x69, 0x2e, 0x6c, 0x61, 0x75, 0x6e,
