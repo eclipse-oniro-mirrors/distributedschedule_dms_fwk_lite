@@ -27,13 +27,14 @@ extern "C" {
 #define TLV_ONE_BYTE_LENGTH  127
 #define TLV_MAX_LENGTH_BYTES 2
 #define TLV_TYPE_LEN         1
+#define MAX_DMS_MSG_LENGTH   1024
 
-typedef struct TLV_NODE_S {
+typedef struct TlvNode {
     uint8_t type;
     uint16_t length;
     const uint8_t *value;
-    struct TLV_NODE_S *next;
-} TLV_NODE_S;
+    struct TlvNode *next;
+} TlvNode;
 
 typedef enum {
     DMS_TLV_SUCCESS = 0,
@@ -44,17 +45,42 @@ typedef enum {
     DMS_TLV_ERR_BAD_NODE_NUM = 5,
     DMS_TLV_ERR_UNKNOWN_TYPE = 6,
     DMS_TLV_ERR_BAD_SOURCE = 7,
-} TLV_ERR_CODE;
+} TlvErrorCode;
 
-/**
-* @brief Translates bytes array to tlv struct, remember free nodes in caller
-* @param byteBuffer bytes
-* @param bufLength the length of bytes
-* @param tlv tlv struct head pointer
-* @return TLV_ERR_CODE
-*/
-TLV_ERR_CODE TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TLV_NODE_S **tlv);
+typedef struct {
+    uint32_t commandId;
+    char *calleeBundleName;
+    char *calleeAbilityName;
+    char *callerSignature;
+} TlvDmsMsgInfo;
 
+typedef struct {
+    uint16_t payloadLength;
+    const uint8_t *payload;
+} CommuMessage;
+
+enum DmsMsgTlvType {
+    DMS_TLV_TYPE_COMMAND_ID = 0x01,
+    DMS_TLV_TYPE_CALLEE_BUNDLE_NAME,
+    DMS_TLV_TYPE_CALLEE_ABILITY_NAME,
+    DMS_TLV_TYPE_CALLER_SIGNATURE,
+    REPLY_ERR_CODE = 0xFF
+};
+
+enum DmsCommuMsgCmdType {
+    DMS_MSG_CMD_START_FA = 0x01,
+    DMS_MSG_CMD_REPLY = 0xFFFF
+};
+
+uint8_t UnMarshallUint8(const TlvNode *tlvHead, uint8_t nodeType);
+uint16_t UnMarshallUint16(const TlvNode *tlvHead, uint8_t nodeType);
+uint32_t UnMarshallUint32(const TlvNode *tlvHead, uint8_t nodeType);
+uint64_t UnMarshallUint64(const TlvNode *tlvHead, uint8_t nodeType);
+int8_t UnMarshallInt8(const TlvNode *tlvHead, uint8_t nodeType);
+int16_t UnMarshallInt16(const TlvNode *tlvHead, uint8_t nodeType);
+int32_t UnMarshallInt32(const TlvNode *tlvHead, uint8_t nodeType);
+int64_t UnMarshallInt64(const TlvNode *tlvHead, uint8_t nodeType);
+const char* UnMarshallString(const TlvNode *tlvHead, uint8_t nodeType);
 #ifdef __cplusplus
 #if __cplusplus
 }

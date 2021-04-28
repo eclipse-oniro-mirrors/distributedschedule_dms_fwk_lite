@@ -15,89 +15,53 @@
 
 #include "dmslite.h"
 
+#include "dmsfwk_interface.h"
 #include "dmslite_log.h"
-#include "dmslite_msg_parser.h"
-#include "dmslite_session.h"
 
-#include "discovery_service.h"
-#include "iunknown.h"
-#include "ohos_errno.h"
 #include "ohos_init.h"
 #include "samgr_lite.h"
 
-#define DMS_PUBLISHID 1
-#define CAPABILITY "ddmpCapability"
-#define CAPABILITY_DATA ""
-#define CAPABILITY_DATA_LENGTH 0
-#define MODULE_NAME "dms"
-#define EMPTY_FEATURE_NAME ""
+#define STACK_SIZE 0x1000
+#define QUEUE_SIZE 20
+#define EMPTY_SERVICE_NAME ""
 
-static const char *GetName(Feature *feature);
-static void OnInitialize(Feature *feature, Service *parent, Identity identity);
-static void OnStop(Feature *feature, Identity identity);
-static BOOL OnMessage(Feature *feature, Request *request);
+static const char *GetName(Service *service);
+static BOOL Initialize(Service *service, Identity identity);
+static BOOL MessageHandle(Service *service, Request *request);
+static TaskConfig GetTaskConfig(Service *service);
 
-static void OnPublishSuccess(int32_t publishId);
-static void OnPublishFail(int32_t publishId, PublishFailReason reason);
-
-static DmsLite g_dmslite = {
-    /* feature functions */
+static DistributedService g_distributedService = {
     .GetName = GetName,
-    .OnInitialize = OnInitialize,
-    .OnStop = OnStop,
-    .OnMessage = OnMessage,
-    .identity = {-1, -1, NULL},
+    .Initialize = Initialize,
+    .MessageHandle = MessageHandle,
+    .GetTaskConfig = GetTaskConfig
 };
 
-static PublishInfo g_publishInfo = {
-    .publishId = DMS_PUBLISHID,
-    .mode = DISCOVER_MODE_ACTIVE,
-    .medium = COAP,
-    .freq = MID,
-    .capability = CAPABILITY,
-    .capabilityData = (unsigned char *)CAPABILITY_DATA,
-    .dataLen = CAPABILITY_DATA_LENGTH,
-};
-
-static IPublishCallback g_publishCallback = {
-    .onPublishSuccess = OnPublishSuccess,
-    .onPublishFail = OnPublishFail,
-};
-
-static const char *GetName(Feature *feature)
+static const char *GetName(Service *service)
 {
-    if (feature == NULL) {
-        return EMPTY_FEATURE_NAME;
+    if (service == NULL) {
+        return EMPTY_SERVICE_NAME;
     }
-    return DMSLITE_FEATURE;
+    return DISTRIBUTED_SCHEDULE_SERVICE;
 }
 
-static void OnInitialize(Feature *feature, Service *parent, Identity identity)
+static BOOL Initialize(Service *service, Identity identity)
 {
-    if (feature == NULL || parent == NULL) {
-        return;
-    }
-
-    ((DmsLite*) feature)->identity = identity;
-
-    int32_t ret = PublishService(MODULE_NAME, &g_publishInfo, &g_publishCallback);
-    if (ret != EC_SUCCESS) {
-        HILOGW("[PublishService failed]");
-    }
-}
-
-static void OnStop(Feature *feature, Identity identity)
-{
-    HILOGD("[Feature stop]");
-}
-
-static BOOL OnMessage(Feature *feature, Request *request)
-{
-    if (feature == NULL || request == NULL) {
+    if (service == NULL) {
         return FALSE;
     }
 
-    /* process for a specific feature-level msgId can be added below */
+    ((DistributedService*) service)->identity = identity;
+    return TRUE;
+}
+
+static BOOL MessageHandle(Service *service, Request *request)
+{
+    if (request == NULL || service == NULL) {
+        return FALSE;
+    }
+
+    /* process for a specific service-level msgId can be added below */
     switch (request->msgId) {
         default: {
             HILOGW("[Unkonwn msgId = %d]", request->msgId);
@@ -107,28 +71,15 @@ static BOOL OnMessage(Feature *feature, Request *request)
     return TRUE;
 }
 
-static void OnPublishSuccess(int32_t publishId)
+static TaskConfig GetTaskConfig(Service *service)
 {
-    RegisterTcpCallback();
-    HILOGI("[dms service publish success]");
-}
-
-static void OnPublishFail(int32_t publishId, PublishFailReason reason)
-{
-    HILOGW("[dms service publish failed reason = %d]", (int32_t) reason);
+    TaskConfig config = {LEVEL_HIGH, PRI_NORMAL, STACK_SIZE, QUEUE_SIZE, SINGLE_TASK};
+    return config;
 }
 
 static void Init()
 {
-    BOOL result = SAMGR_GetInstance()->RegisterFeature(DISTRIBUTED_SCHEDULE_SERVICE, (Feature*) &g_dmslite);
-    if (!result) {
-        HILOGE("[dms register feature failed]");
-    }
-
-    result = SAMGR_GetInstance()->RegisterFeatureApi(DISTRIBUTED_SCHEDULE_SERVICE,
-        DMSLITE_FEATURE, GET_IUNKNOWN(g_dmslite));
-    if (!result) {
-        HILOGE("[dms register feature api failed]");
-    }
+    BOOL result = SAMGR_GetInstance()->RegisterService((Service *)&g_distributedService);
+    HILOGI("[dms service start %s]", result ? "success" : "failed");
 }
-SYS_FEATURE_INIT(Init);
+SYS_SERVICE_INIT(Init);

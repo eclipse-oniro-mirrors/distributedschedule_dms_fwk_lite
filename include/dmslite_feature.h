@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTEDSCHEDULE_SERVICE_H
-#define OHOS_DISTRIBUTEDSCHEDULE_SERVICE_H
+#ifndef OHOS_DMSLITE_FEATURE_H
+#define OHOS_DMSLITE_FEATURE_H
 
-#include "iproxy_server.h"
-#include "service.h"
+#include "dmsfwk_interface.h"
+#include "feature.h"
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -26,9 +26,24 @@ extern "C" {
 #endif
 
 typedef struct {
-    INHERIT_SERVICE;
+    /* as a feature */
+    INHERIT_FEATURE;
+    /* implement the dmslite interface */
+    INHERIT_IUNKNOWNENTRY(DmsProxy);
     Identity identity;
-} DistributedService;
+} DmsLite;
+
+enum DmsMsgType {
+    DEVICE_ONLINE = 0x01,
+    DEVICE_OFFLINE,
+    SESSION_OPEN,
+    SESSION_CLOSE,
+    BYTES_RECEIVED,
+    START_REMOTE_ABILITY,
+    START_ABILITY_FROM_REMOTE
+};
+
+DmsLite *GetDmsLiteFeature();
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -36,4 +51,4 @@ typedef struct {
 #endif
 #endif
 
-#endif // OHOS_DISTRIBUTEDSCHEDULE_SERVICE_H
+#endif // OHOS_DMSLITE_FEATURE_H

@@ -51,6 +51,19 @@ typedef struct {
     StartAbilityCallback onStartAbilityDone;
 } IDmsFeatureCallback;
 
+typedef struct {
+    const char* calleeBundleName;
+    const char* calleeAbilityName;
+    const char* callerSignature;
+} PermissionCheckInfo;
+
+enum IntNumBytes {
+    INT_8 = 1,
+    INT_16 = 2,
+    INT_32 = 4,
+    INT_64 = 8,
+};
+
 #ifdef __cplusplus
 #if __cplusplus
 }

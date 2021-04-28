@@ -27,37 +27,39 @@ extern "C" {
 #define DMSLITE_LABEL "[DMSLITE]"
 #define NEW_LINE "\n"
 
+#ifdef APP_PLATFORM_WATCHGT
+#define DMSLITE_LOG(LEVEL, fmt, ...)
+#else
+#define DMSLITE_LOG(LEVEL, fmt, ...) \
+    HILOG_##LEVEL(HILOG_MODULE_DMS, DMSLITE_LABEL "[%s:%d]" fmt NEW_LINE, __func__, __LINE__, ##__VA_ARGS__)
+#endif
+
 #if HILOG_COMPILE_LEVEL <= HILOG_LV_DEBUG
-#define HILOGD(fmt, ...) HILOG_DEBUG(LOG_CORE, DMSLITE_LABEL "[%s:%d]" fmt NEW_LINE, \
-    __func__, __LINE__, ##__VA_ARGS__)
+#define HILOGD(fmt, ...) DMSLITE_LOG(DEBUG, fmt, ##__VA_ARGS__)
 #else
 #define HILOGD(fmt, ...)
 #endif
 
 #if HILOG_COMPILE_LEVEL <= HILOG_LV_INFO
-#define HILOGI(fmt, ...) HILOG_INFO(LOG_CORE, DMSLITE_LABEL "[%s:%d]" fmt NEW_LINE, \
-    __func__, __LINE__, ##__VA_ARGS__)
+#define HILOGI(fmt, ...) DMSLITE_LOG(INFO, fmt, ##__VA_ARGS__)
 #else
 #define HILOGI(fmt, ...)
 #endif
 
 #if HILOG_COMPILE_LEVEL <= HILOG_LV_WARN
-#define HILOGW(fmt, ...) HILOG_WARN(LOG_CORE, DMSLITE_LABEL "[%s:%d]" fmt NEW_LINE, \
-    __func__, __LINE__, ##__VA_ARGS__)
+#define HILOGW(fmt, ...) DMSLITE_LOG(WARN, fmt, ##__VA_ARGS__)
 #else
 #define HILOGW(fmt, ...)
 #endif
 
 #if HILOG_COMPILE_LEVEL <= HILOG_LV_ERROR
-#define HILOGE(fmt, ...) HILOG_ERROR(LOG_CORE, DMSLITE_LABEL "[%s:%d]" fmt NEW_LINE, \
-    __func__, __LINE__, ##__VA_ARGS__)
+#define HILOGE(fmt, ...) DMSLITE_LOG(ERROR, fmt, ##__VA_ARGS__)
 #else
 #define HILOGE(fmt, ...)
 #endif
 
 #if HILOG_COMPILE_LEVEL <= HILOG_LV_FATAL
-#define HILOGF(fmt, ...) HILOG_FATAL(LOG_CORE, DMSLITE_LABEL "[%s:%d]" fmt NEW_LINE, \
-    __func__, __LINE__, ##__VA_ARGS__)
+#define HILOGF(fmt, ...) DMSLITE_LOG(FATAL, fmt, ##__VA_ARGS__)
 #else
 #define HILOGF(fmt, ...)
 #endif

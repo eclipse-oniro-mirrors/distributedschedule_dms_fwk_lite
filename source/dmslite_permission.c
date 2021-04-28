@@ -13,16 +13,14 @@
  * limitations under the License.
  */
 
-#include "dmslite_check_remote_permission.h"
+#include "dmslite_permission.h"
 
 #include <unistd.h>
 
-#include "distributed_service_interface.h"
+#include "dmsfwk_interface.h"
 #include "dmslite_log.h"
 
 #include "bundle_inner_interface.h"
-#include "bundle_manager.h"
-#include "ohos_errno.h"
 #include "samgr_lite.h"
 #include "securec.h"
 
@@ -46,9 +44,9 @@ static bool GetBmsInterface(struct BmsServerProxy **bmsInterface)
     return true;
 }
 
-int8_t CheckRemotePermission(const TlvDmsMsgInfo *tlvDmsMsgInfo)
+int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
 {
-    if (tlvDmsMsgInfo == NULL) {
+    if (permissionCheckInfo == NULL) {
         return DMS_EC_FAILURE;
     }
 
@@ -59,6 +57,7 @@ int8_t CheckRemotePermission(const TlvDmsMsgInfo *tlvDmsMsgInfo)
     }
 
     int32_t errCode;
+#ifndef APP_PLATFORM_WATCHGT
     uid_t callerUid = getuid();
     if (callerUid == FOUNDATION_UID) {
         /* inner-process mode */
@@ -67,30 +66,38 @@ int8_t CheckRemotePermission(const TlvDmsMsgInfo *tlvDmsMsgInfo)
             HILOGE("[GetBmsInterface query null]");
             return DMS_EC_GET_BMS_FAILURE;
         }
-        errCode = bmsInterface->GetBundleInfo(tlvDmsMsgInfo->calleeBundleName,
+        errCode = bmsInterface->GetBundleInfo(permissionCheckInfo->calleeBundleName,
             GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
     } else if (callerUid == SHELL_UID) {
         /* inter-process mode (mainly called in xts testsuit process started by shell) */
-        errCode = GetBundleInfo(tlvDmsMsgInfo->calleeBundleName,
+        errCode = GetBundleInfo(permissionCheckInfo->calleeBundleName,
             GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
     } else {
         errCode = EC_FAILURE;
     }
-
+#else
+    struct BmsServerProxy *bmsInterface = NULL;
+    if (!GetBmsInterface(&bmsInterface)) {
+        HILOGE("[GetBmsInterface query null]");
+        return DMS_EC_GET_BMS_FAILURE;
+    }
+    errCode = bmsInterface->GetBundleInfo(permissionCheckInfo->calleeBundleName,
+        GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+#endif
     if (errCode != EC_SUCCESS) {
         HILOGE("[GetBundleInfo errCode = %d]", errCode);
         return DMS_EC_GET_BUNDLEINFO_FAILURE;
     }
 
     /* appId: bundleName + "_" + signature */
-    const char *calleeSignature = bundleInfo.appId + strlen(tlvDmsMsgInfo->calleeBundleName)
+    const char *calleeSignature = bundleInfo.appId + strlen(permissionCheckInfo->calleeBundleName)
         + DELIMITER_LENGTH;
-    if ((tlvDmsMsgInfo->callerSignature == NULL) || (calleeSignature == NULL)) {
+    if ((permissionCheckInfo->callerSignature == NULL) || (calleeSignature == NULL)) {
         HILOGE("[Signature is null]");
         return DMS_EC_FAILURE;
     }
 
-    if (strcmp(tlvDmsMsgInfo->callerSignature, calleeSignature) != 0) {
+    if (strcmp(permissionCheckInfo->callerSignature, calleeSignature) != 0) {
         HILOGE("[Signature unmatched]");
         return DMS_EC_CHECK_PERMISSION_FAILURE;
     }
