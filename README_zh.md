@@ -43,13 +43,13 @@
 ```
 ├── BUILD.gn
 ├── include
-│  ├── distributed_schedule_service.h        # 分布式调度对外接口
+│  ├── dmslite.h        # 分布式调度对外接口
 │  ├── dmslite_check_remote_permission.h     # 分布式调度权限管理模块
 │  ├── dmslite_famgr.h                       # 分布式调度FA管理模块
 │  ├── dmslite_inner_common.h                # 分布式调度内部通用文件
 │  ├── dmslite.h                             # 分布式调度服务实现
 │  ├── dmslite_log.h                         # 日志模块
-│  ├── dmslite_msg_parser.h                  # 分布式消息解析模块
+│  ├── dmslite_parser.h                  # 分布式消息解析模块
 │  ├── dmslite_tlv_common.h                  # TLV格式数据解析模块
 │  └── dmslite_session.h                     # 跨设备通信收发模块
 ├── readme.md

@@ -15,6 +15,9 @@
 
 #include "dmslite_tlv_common.h"
 
+#include "dmslite_inner_common.h"
+#include "dmslite_utils.h"
+
 #include <stdbool.h>
 #include <string.h>
 
@@ -22,215 +25,127 @@
 
 #include "dmslite_log.h"
 
-/* Notice: currently only four type of nodes, i.e. command id, callee package name and ability name,
-caller signature are supported */
-#define MAX_VALID_NODES 4
-
-#define HIGH_BIT_MASK 0xFF
-#define LOW_BIT_MASK 0x7F
-#define TLV_LENGTH_SHIFT_BITS 7
-
-#define BREAK_IF_FAILURE(errCode);       \
-    if ((errCode) != DMS_TLV_SUCCESS) {  \
-        break;                           \
-    }                                    \
-
-static inline bool IsNextTlvLength(uint8_t num)
+TlvNode* GetNodeByType(uint8_t nodeType, const TlvNode *tlvHead)
 {
-    /* 128-16383 : 0b1xxxxxxx 0b0xxxxxxx */
-    return (((num) & HIGH_BIT_MASK) >> TLV_LENGTH_SHIFT_BITS) == 0x00;
+    TlvNode* tlvNode = (TlvNode *)tlvHead;
+    while (tlvNode != NULL) {
+        if (tlvNode->type == nodeType) {
+            return tlvNode;
+        }
+        tlvNode = tlvNode->next;
+    }
+    return NULL;
 }
 
-static inline void TlvByteToLength(uint8_t byte, uint16_t *len)
+static uint64_t ConvertIntDataBig2Little(const uint8_t *dataIn, uint8_t typeSize)
 {
-    *len = ((*len) << TLV_LENGTH_SHIFT_BITS) | (byte & LOW_BIT_MASK);
-}
-
-static inline bool IsValidNodeNum(uint8_t num)
-{
-    return num == MAX_VALID_NODES;
-}
-
-static TLV_ERR_CODE TlvBytesToLength(const uint8_t *bytesBuffer, uint16_t bufLength,
-                                     uint16_t *length, uint8_t *bytesNumber)
-{
-    uint8_t bytesNum = 0;
-    uint16_t len = 0;
-    /* compute TLV's L, when value > 127, the L should be two bytes, else L is one byte long
-       0-127      :  0b0xxxxxxx
-       128-16383  :  0b1xxxxxxx 0b0xxxxxxx */
-    for (uint8_t i = 0; i < bufLength; i++) {
-        TlvByteToLength(bytesBuffer[i], &len);
-        bytesNum++;
-        if (IsNextTlvLength(bytesBuffer[i])) {
-            HILOGD("[bytes num = %d]", bytesNum);
+    uint64_t dataOut = 0;
+    switch (typeSize) {
+        case INT_16:
+            Convert16DataBig2Little(dataIn, (uint16_t*)&dataOut);
             break;
-        }
-        if (bytesNum >= TLV_MAX_LENGTH_BYTES) {
-            return DMS_TLV_ERR_LEN;
-        }
+        case INT_32:
+            Convert32DataBig2Little(dataIn, (uint32_t*)&dataOut);
+            break;
+        case INT_64:
+            Convert64DataBig2Little(dataIn, (uint64_t*)&dataOut);
+            break;
+        default:
+            break;
     }
-    /* it is meaningless to have a node with length being zero */
-    if (len == 0) {
-        return DMS_TLV_ERR_LEN;
-    }
-
-    *length = len;
-    *bytesNumber = bytesNum;
-
-    return DMS_TLV_SUCCESS;
+    return dataOut;
 }
 
-static TLV_ERR_CODE TlvFillNode(const uint8_t *byteBuffer, uint16_t bufLength,
-                                TLV_NODE_S *node, uint16_t *actualHandledLen)
+static uint64_t ConvertIntByDefault(const uint8_t *dataIn, uint8_t typeSize)
 {
-    if (bufLength <= TLV_TYPE_LEN) {
-        HILOGE("[Bad bufLength = %d]", bufLength);
-        return DMS_TLV_ERR_LEN;
+    switch (typeSize) {
+        case INT_8:
+            return *((int8_t*)dataIn);
+        case INT_16:
+            return *((int16_t*)dataIn);
+        case INT_32:
+            return *((int32_t*)dataIn);
+        case INT_64:
+            return *((int64_t*)dataIn);
+        default:
+            return 0;
     }
+}
 
-    /* fill TLV's T(type) */
-    node->type = *byteBuffer;
-    uint16_t curTlvNodeLen = TLV_TYPE_LEN;
-
-    /* fill TLV's L(length) */
-    uint16_t length = 0;
-    uint8_t bytesNum = 0;
-    const uint8_t *lengthPartAddr = byteBuffer + curTlvNodeLen;
-    TLV_ERR_CODE errCode = TlvBytesToLength(lengthPartAddr, bufLength - curTlvNodeLen,
-        &length, &bytesNum);
-    if (errCode != DMS_TLV_SUCCESS) {
-        return DMS_TLV_ERR_LEN;
+static uint64_t UnMarshallInt(const TlvNode *tlvHead, uint8_t nodeType, uint8_t fieldSize)
+{
+    if (tlvHead == NULL) {
+        return 0;
     }
-    node->length = length;
-    curTlvNodeLen += bytesNum;
+    TlvNode* tlvNode = GetNodeByType(nodeType, tlvHead);
+    if (tlvNode == NULL || tlvNode->value == NULL) {
+        HILOGE("[Bad node type %d]", nodeType);
+        return 0;
+    }
+    if (fieldSize != tlvNode->length) {
+        HILOGE("[Mismatched fieldSize=%d while nodeLength=%d]", fieldSize, tlvNode->length);
+        return 0;
+    }
+    return IsBigEndian() ? ConvertIntByDefault(tlvNode->value, fieldSize)
+        : ConvertIntDataBig2Little(tlvNode->value, fieldSize);
+}
 
-    /* fill TLV's V(value) */
-    node->value = byteBuffer + curTlvNodeLen;
-    curTlvNodeLen += length;
-    if (curTlvNodeLen > bufLength) {
-        return DMS_TLV_ERR_LEN;
+uint8_t UnMarshallUint8(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(uint8_t));
+}
+
+uint16_t UnMarshallUint16(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(uint16_t));
+}
+
+uint32_t UnMarshallUint32(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(uint32_t));
+}
+
+uint64_t UnMarshallUint64(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(uint64_t));
+}
+
+int8_t UnMarshallInt8(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(int8_t));
+}
+
+int16_t UnMarshallInt16(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(int16_t));
+}
+
+int32_t UnMarshallInt32(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(int32_t));
+}
+
+int64_t UnMarshallInt64(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    return UnMarshallInt(tlvHead, nodeType, sizeof(int64_t));
+}
+
+const char* UnMarshallString(const TlvNode *tlvHead, uint8_t nodeType)
+{
+    HILOGI("[Get string value for node %d]", nodeType);
+    if (tlvHead == NULL) {
+        return "";
+    }
+    TlvNode* tlvNode = GetNodeByType(nodeType, tlvHead);
+    if (tlvNode == NULL || tlvNode->value == NULL) {
+        HILOGE("[Bad node type %d]", nodeType);
+        return "";
+    }
+    const char* value = (const char*)tlvNode->value;
+    if (value[tlvNode->length - 1] != '\0') {
+        HILOGE("[Non-zero ending string, length:%d, ending:%d]", tlvNode->length, value[tlvNode->length - 1]);
+        return "";
     } else {
-        *actualHandledLen = curTlvNodeLen;
+        return value;
     }
-
-    return DMS_TLV_SUCCESS;
-}
-
-static inline TLV_NODE_S* MallocTlvNode()
-{
-    TLV_NODE_S *node = malloc(sizeof(TLV_NODE_S));
-    if (node == NULL) {
-        HILOGE("[Out of memory]");
-        return NULL;
-    }
-    /* won't fail */
-    (void) memset_s(node, sizeof(TLV_NODE_S), 0x00, sizeof(TLV_NODE_S));
-
-    return node;
-}
-
-static inline TLV_ERR_CODE CheckNodeNum(uint8_t handledNodeNum)
-{
-    /* check node num */
-    if (!IsValidNodeNum(handledNodeNum)) {
-        HILOGE("[Bad node num = %d]", handledNodeNum);
-        return DMS_TLV_ERR_BAD_NODE_NUM;
-    }
-
-    return DMS_TLV_SUCCESS;
-}
-
-static inline TLV_ERR_CODE CheckNodeSequence(uint8_t handledNodeNum, const TLV_NODE_S *curNode)
-{
-    if (handledNodeNum != curNode->type) {
-        HILOGE("[Bad node type sequence '%d' is expected but '%d' appears]",
-            handledNodeNum, curNode->type);
-        return DMS_TLV_ERR_OUT_OF_ORDER;
-    }
-
-    return DMS_TLV_SUCCESS;
-}
-
-
-static inline TLV_ERR_CODE PreCheck(uint16_t remainingLen, uint16_t curTlvNodeLen, uint8_t handledNodeNum)
-{
-    if (remainingLen < curTlvNodeLen) {
-        HILOGE("[Bad length remainingLen = %d, curTlvNodeLen = %d]", remainingLen, curTlvNodeLen);
-        return DMS_TLV_ERR_LEN;
-    }
-
-    if (handledNodeNum > MAX_VALID_NODES) {
-        return DMS_TLV_ERR_BAD_NODE_NUM;
-    }
-
-    return DMS_TLV_SUCCESS;
-}
-
-static inline TLV_ERR_CODE MoveToNextTlvNode(TLV_NODE_S **curNode)
-{
-    TLV_NODE_S *next = MallocTlvNode();
-    if (next == NULL) {
-        return DMS_TLV_ERR_NO_MEM;
-    }
-
-    (*curNode)->next = next;
-    *curNode = next;
-    return DMS_TLV_SUCCESS;
-}
-
-TLV_ERR_CODE TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TLV_NODE_S **tlv)
-{
-    if ((tlv == NULL) || (byteBuffer == NULL)) {
-        HILOGE("[Bad parameter]");
-        return DMS_TLV_ERR_PARAM;
-    }
-    /* bufLength is longer than TLV_TYPE_LEN + 1(means length should be at least 1 byte) */
-    if (bufLength <= (TLV_TYPE_LEN + 1)) {
-        HILOGE("[Bad Length = %d]", bufLength);
-        return DMS_TLV_ERR_LEN;
-    }
-
-    TLV_NODE_S *head = MallocTlvNode();
-    if (head == NULL) {
-        return DMS_TLV_ERR_NO_MEM;
-    }
-    TLV_NODE_S *node = head;
-
-    /* translate bytes to tlv node until the end of buffer */
-    uint16_t remainingLen = bufLength;
-    uint8_t handledNodeNum = 0;
-    const uint8_t *nodeStartAddr = byteBuffer;
-    TLV_ERR_CODE errCode = DMS_TLV_SUCCESS;
-    while (true) {
-        uint16_t curTlvNodeLen = 0;
-        errCode = TlvFillNode(nodeStartAddr, remainingLen, node, &curTlvNodeLen);
-        BREAK_IF_FAILURE(errCode);
-
-        /* check whether there is need to continue processing the remaining nodes */
-        handledNodeNum++;
-        errCode = PreCheck(remainingLen, curTlvNodeLen, handledNodeNum);
-        BREAK_IF_FAILURE(errCode);
-
-        /* check node type sequence: the type of node must appear in strictly increasing order */
-        errCode = CheckNodeSequence(handledNodeNum, node);
-        BREAK_IF_FAILURE(errCode);
-
-        remainingLen -= curTlvNodeLen;
-        if (remainingLen == 0) {
-            /* check node num if all bytes in buffer are processed done */
-            errCode = CheckNodeNum(handledNodeNum);
-            break;
-        }
-
-        /* if all is ok, then move to the T part of the next tlv node */
-        nodeStartAddr += curTlvNodeLen;
-        errCode = MoveToNextTlvNode(&node);
-        BREAK_IF_FAILURE(errCode);
-    }
-
-    /* NOTICE: free nodes in caller */
-    *tlv = head;
-
-    return errCode;
 }

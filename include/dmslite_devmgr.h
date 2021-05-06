@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DMSLITE_SESSION_H
-#define OHOS_DMSLITE_SESSION_H
+#ifndef OHOS_DMSLITE_DEVMGR_H
+#define OHOS_DMSLITE_DEVMGR_H
 
 #include <stdint.h>
 
@@ -24,16 +24,11 @@ extern "C" {
 #endif
 #endif
 
-void InitSoftbusService();
+int32_t AddDevMgrListener();
 
-int32_t CreateDMSSessionServer();
-int32_t CloseDMSSessionServer();
-int32_t SendDmsMessage(char *data, int32_t len);
-int32_t OpenDMSSession();
-void CloseDMSSession();
-void HandleSessionClosed(int32_t sessionId);
-int32_t HandleSessionOpened(int32_t sessionId);
-void HandleBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen);
+int32_t UnRegisterDevMgrListener();
+
+char* GetPeerId();
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -41,4 +36,4 @@ void HandleBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen);
 #endif
 #endif
 
-#endif // OHOS_DMSLITE_SESSION_H
+#endif // OHOS_DMSLITE_DEVMGR_H
