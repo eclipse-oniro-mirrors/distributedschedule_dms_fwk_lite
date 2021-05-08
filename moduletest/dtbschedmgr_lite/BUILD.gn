@@ -15,7 +15,7 @@ import("//build/lite/config/test.gni")
 
 if (ohos_kernel_type == "liteos_a" || ohos_kernel_type == "linux") {
   # feature: distributed_schedule_test_dms
-  unittest("distributed_schedule_test_dms") {
+  unittest("distributed_schedule_test_dms_door") {
     output_extension = "bin"
     sources = [ "source/tlv_parse_test.cpp" ]
 
@@ -28,6 +28,6 @@ if (ohos_kernel_type == "liteos_a" || ohos_kernel_type == "linux") {
     output_dir = "$root_out_dir/test/unittest/distributedschedule"
   }
   group("unittest") {
-    deps = [ ":distributed_schedule_test_dms" ]
+    deps = [ ":distributed_schedule_test_dms_door" ]
   }
 }
