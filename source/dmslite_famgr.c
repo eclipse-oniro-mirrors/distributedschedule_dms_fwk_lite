@@ -78,6 +78,5 @@ int32_t StartRemoteAbility(const Want *want)
     }
     HILOGE("[StartRemoteAbility len:%d]", GetPacketSize());
     int32_t ret = SendDmsMessage(GetPacketBufPtr(), GetPacketSize());
-    CleanBuild();
     return ret;
 }

@@ -124,5 +124,5 @@ Call the  **startAbility**  method on the primary device to start the target FA 
 
 [Distributed Scheduler subsystem](en-us_topic_0000001115719369.md)
 
-**[dms\_fwk\_lite](https://gitee.com/openharmony/distributedschedule_services_dtbschedmgr_lite)**
+**[dms\_fwk\_lite](https://gitee.com/openharmony/distributedschedule_dms_fwk_lite)**
 
