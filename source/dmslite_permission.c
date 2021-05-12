@@ -20,13 +20,18 @@
 #include "dmsfwk_interface.h"
 #include "dmslite_log.h"
 
+#ifdef APP_PLATFORM_WATCHGT
+#include "bundle_manager.h"
+#else
 #include "bundle_inner_interface.h"
+#endif
 #include "samgr_lite.h"
 #include "securec.h"
 
 #define DELIMITER_LENGTH 1
 #define GET_BUNDLE_WITHOUT_ABILITIES 0
 
+#ifndef APP_PLATFORM_WATCHGT
 static bool GetBmsInterface(struct BmsServerProxy **bmsInterface)
 {
     IUnknown *iUnknown = SAMGR_GetInstance()->GetFeatureApi(BMS_SERVICE, BMS_FEATURE);
@@ -43,6 +48,7 @@ static bool GetBmsInterface(struct BmsServerProxy **bmsInterface)
 
     return true;
 }
+#endif
 
 int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
 {
@@ -76,12 +82,7 @@ int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
         errCode = EC_FAILURE;
     }
 #else
-    struct BmsServerProxy *bmsInterface = NULL;
-    if (!GetBmsInterface(&bmsInterface)) {
-        HILOGE("[GetBmsInterface query null]");
-        return DMS_EC_GET_BMS_FAILURE;
-    }
-    errCode = bmsInterface->GetBundleInfo(permissionCheckInfo->calleeBundleName,
+    errCode = GetBundleInfo(permissionCheckInfo->calleeBundleName,
         GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
 #endif
     if (errCode != EC_SUCCESS) {
