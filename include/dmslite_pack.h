@@ -28,9 +28,10 @@ extern "C" {
 
 typedef enum {
     COMMAND_ID = 1,
-    CALLEE_BUNDLE_NAME,
-    CALLEE_ABILITY_NAME,
-    CALLER_SIGNATURE
+    CALLEE_BUNDLE_NAME = 2,
+    CALLEE_ABILITY_NAME = 3,
+    CALLER_SIGNATURE = 4,
+    DMS_VERSION = 5
 } FieldType;
 
 bool PreprareBuild();
