@@ -29,16 +29,11 @@
 
 #include "securec.h"
 #include "softbus_common.h"
-#include "softbus_session.h"
-#include "softbus_sys.h"
+#include "session.h"
 
-#define DMS_SESSION_NAME "com.huawei.harmonyos.foundation.dms"
+#define DMS_SESSION_NAME "ohos.distributedschedule.dms.proxymanager"
 #define DMS_MODULE_NAME "dms"
 
-#define TIME_SS_US 1000000
-#define TIME_US_MS 1000
-#define TIME_US_NS 1000000000
-#define TIME_OUT 10000
 #define INVALID_SESSION_ID (-1)
 #define MAX_DATA_SIZE 256
 
@@ -58,10 +53,10 @@ static void GetCondTime(struct timespec *tv, int timeDelay);
 static void OnStartAbilityDone(int8_t errCode);
 
 static ISessionListener g_sessionCallback = {
-    .onBytesReceived = OnBytesReceived,
-    .onSessionOpened = OnSessionOpened,
-    .onSessionClosed = OnSessionClosed,
-    .onMessageReceived = OnMessageReceived
+    .OnBytesReceived = OnBytesReceived,
+    .OnSessionOpened = OnSessionOpened,
+    .OnSessionClosed = OnSessionClosed,
+    .OnMessageReceived = OnMessageReceived
 };
 
 static IDmsFeatureCallback g_dmsFeatureCallback = {
@@ -77,13 +72,12 @@ void OnStartAbilityDone(int8_t errCode)
 
 void InitSoftbusService()
 {
-    InitSoftBus(DMS_MODULE_NAME);
     AddDevMgrListener();
 }
 
 void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
 {
-    if (dataLen > MAX_DATA_SIZE) {
+    if (data == NULL || dataLen > MAX_DATA_SIZE) {
         return;
     }
     char *message = (char *)DMS_ALLOC(dataLen);
@@ -138,6 +132,11 @@ void HandleSessionClosed(int32_t sessionId)
 
 int32_t OnSessionOpened(int32_t sessionId, int result)
 {
+    if (sessionId < 0 || result != 0) {
+        HILOGD("[OnSessionOpened errCode = %d]", result);
+        return result;
+    }
+
     Request request = {
         .msgId = SESSION_OPEN,
         .len = 0,
@@ -152,7 +151,10 @@ int32_t HandleSessionOpened(int32_t sessionId)
     if (g_curSessionId != sessionId) {
         return EC_SUCCESS;
     }
-    int32_t ret = SendBytes(g_curSessionId, data, len);
+    int32_t ret = SendBytes(g_curSessionId, GetPacketBufPtr(), GetPacketSize());
+    if (ret != 0) {
+        CloseDMSSession(); 
+    }
     CleanBuild();
     return ret;
 }
@@ -175,13 +177,17 @@ int32_t CloseDMSSessionServer()
 int32_t SendDmsMessage(char *data, int32_t len)
 {
     HILOGI("[SendMessage]");
-    if (g_curBusy) {
+    if (g_curBusy || data == NULL || len > MAX_DATA_SIZE) {
         return EC_FAILURE;
     }
     g_curBusy = true;
-    SessionAttribute attr = { .dataType = TYPE_BYTES };
+    SessionAttribute attr = {
+        .dataType = TYPE_BYTES
+    };
     g_curSessionId = OpenSession(DMS_SESSION_NAME, DMS_SESSION_NAME, GetPeerId(), DMS_MODULE_NAME, &attr);
     if (g_curSessionId < 0) {
+        g_curSessionId = INVALID_SESSION_ID;
+        g_curBusy = false;
         return EC_FAILURE;
     }
     return EC_SUCCESS;

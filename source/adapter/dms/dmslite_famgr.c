@@ -18,6 +18,9 @@
 #include "dmsfwk_interface.h"
 #include "dmslite.h"
 #include "dmslite_log.h"
+#include "dmslite_pack.h"
+#include "dmslite_session.h"
+#include "dmslite_utils.h"
 
 #include "ability_manager.h"
 #include "ability_service_interface.h"
@@ -30,6 +33,7 @@
 
 #define INVALID_IPC_TOKEN 0
 #define INVALID_IPC_HANDLE (-1)
+#define DMS_VERSION_VALUE 200
 
 static SvcIdentity g_serviceIdentity = {
     .handle = INVALID_IPC_HANDLE,
@@ -176,5 +180,32 @@ int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo)
 int32_t StartRemoteAbility(const Want *want)
 {
     HILOGE("[StartRemoteAbility]");
+    if (want == NULL || want->data == NULL || want->element == NULL) {
+        return DMS_EC_INVALID_PARAMETER;
+    }
+    char *bundleName = (char *)want->data;
+    BundleInfo bundleInfo;
+    if (memset_s(&bundleInfo, sizeof(BundleInfo), 0x00, sizeof(BundleInfo)) != EOK) {
+        HILOGE("[bundleInfo memset failed]");
+        return DMS_EC_FAILURE;
+    }
+    GetBundleInfo(bundleName, 0, &bundleInfo);
+#ifndef XTS_SUITE_TEST
+    PreprareBuild();
+#endif
+    PACKET_MARSHALL_HELPER(Uint16, COMMAND_ID, DMS_MSG_CMD_START_FA);
+    PACKET_MARSHALL_HELPER(String, CALLEE_BUNDLE_NAME, want->element->bundleName);
+    PACKET_MARSHALL_HELPER(String, CALLEE_ABILITY_NAME, want->element->abilityName);
+    if (bundleInfo.appId != NULL) {
+        PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, bundleInfo.appId);
+    } else {
+        PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, "");
+    }
+    PACKET_MARSHALL_HELPER(Uint16, DMS_VERSION, DMS_VERSION_VALUE);
+    HILOGE("[StartRemoteAbility len:%d]", GetPacketSize());
+#ifndef XTS_SUITE_TEST
+    return SendDmsMessage(GetPacketBufPtr(), GetPacketSize());
+#else
     return EOK;
+#endif
 }
