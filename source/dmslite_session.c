@@ -23,27 +23,22 @@
 #include "dmslite_devmgr.h"
 #include "dmslite_feature.h"
 #include "dmslite_log.h"
+#include "dmslite_pack.h"
 #include "dmslite_parser.h"
 #include "dmslite_utils.h"
 
 #include "securec.h"
 #include "softbus_common.h"
-#include "softbus_session.h"
-#include "softbus_sys.h"
+#include "session.h"
 
-#define DMS_SESSION_NAME "com.huawei.harmonyos.foundation.dms"
+#define DMS_SESSION_NAME "ohos.distributedschedule.dms.proxymanager"
 #define DMS_MODULE_NAME "dms"
 
-#define TIME_SS_US 1000000
-#define TIME_US_MS 1000
-#define TIME_US_NS 1000000000
-#define TIME_OUT 10000
 #define INVALID_SESSION_ID (-1)
 #define MAX_DATA_SIZE 256
 
 static int32_t g_curSessionId = INVALID_SESSION_ID;
-static pthread_mutex_t g_mutex;
-static pthread_cond_t g_cond;
+static bool g_curBusy = false;
 
 /* session callback */
 static void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen);
@@ -58,10 +53,10 @@ static void GetCondTime(struct timespec *tv, int timeDelay);
 static void OnStartAbilityDone(int8_t errCode);
 
 static ISessionListener g_sessionCallback = {
-    .onBytesReceived = OnBytesReceived,
-    .onSessionOpened = OnSessionOpened,
-    .onSessionClosed = OnSessionClosed,
-    .onMessageReceived = OnMessageReceived
+    .OnBytesReceived = OnBytesReceived,
+    .OnSessionOpened = OnSessionOpened,
+    .OnSessionClosed = OnSessionClosed,
+    .OnMessageReceived = OnMessageReceived
 };
 
 static IDmsFeatureCallback g_dmsFeatureCallback = {
@@ -77,15 +72,12 @@ void OnStartAbilityDone(int8_t errCode)
 
 void InitSoftbusService()
 {
-    pthread_mutex_init(&g_mutex, NULL);
-    pthread_cond_init(&g_cond, NULL);
-    InitSoftBus(DMS_MODULE_NAME);
     AddDevMgrListener();
 }
 
 void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
 {
-    if (dataLen > MAX_DATA_SIZE || dataLen <= 0) {
+    if (data == NULL || dataLen > MAX_DATA_SIZE) {
         return;
     }
     char *message = (char *)DMS_ALLOC(dataLen);
@@ -112,31 +104,59 @@ void HandleBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
     CommuMessage commuMessage;
     commuMessage.payloadLength = dataLen;
     commuMessage.payload = (uint8_t *)data;
-
     int32_t errCode = ProcessCommuMsg(&commuMessage, &g_dmsFeatureCallback);
-
     HILOGI("[ProcessCommuMsg errCode = %d]", errCode);
 }
 
 void OnSessionClosed(int32_t sessionId)
 {
+    Request request = {
+        .msgId = SESSION_CLOSE,
+        .len = 0,
+        .data = NULL,
+        .msgValue = sessionId
+    };
+    int32_t result = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
+    if (result != EC_SUCCESS) {
+        HILOGD("[OnSessionClosed errCode = %d]", result);
+    }
 }
 
 void HandleSessionClosed(int32_t sessionId)
 {
+    if (g_curSessionId == sessionId) {
+        g_curSessionId = INVALID_SESSION_ID;
+        g_curBusy = false;
+    }
 }
 
 int32_t OnSessionOpened(int32_t sessionId, int result)
 {
-    if (g_curSessionId == sessionId) {
-        NotifyConnected();
+    if (sessionId < 0 || result != 0) {
+        HILOGD("[OnSessionOpened errCode = %d]", result);
+        return result;
     }
-    return EC_SUCCESS;
+
+    Request request = {
+        .msgId = SESSION_OPEN,
+        .len = 0,
+        .data = NULL,
+        .msgValue = sessionId
+    };
+    return SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
 }
 
 int32_t HandleSessionOpened(int32_t sessionId)
 {
-    return EC_SUCCESS;
+    if (g_curSessionId != sessionId) {
+        return EC_SUCCESS;
+    }
+    int32_t ret = SendBytes(g_curSessionId, GetPacketBufPtr(), GetPacketSize());
+    if (ret != 0) {
+        CloseDMSSession(); 
+    }
+    CleanBuild();
+    return ret;
 }
 
 void OnMessageReceived(int sessionId, const void *data, unsigned int len)
@@ -157,14 +177,17 @@ int32_t CloseDMSSessionServer()
 int32_t SendDmsMessage(char *data, int32_t len)
 {
     HILOGI("[SendMessage]");
-    SessionAttribute attr = { .dataType = TYPE_BYTES };
-    g_curSessionId = OpenSession(DMS_SESSION_NAME, DMS_SESSION_NAME, GetPeerId(), DMS_MODULE_NAME, &attr);
-    if (g_curSessionId < 0) {
+    if (g_curBusy || data == NULL || len > MAX_DATA_SIZE) {
         return EC_FAILURE;
     }
-    WaitForConnected(TIME_OUT);
-    int32_t ret = SendBytes(g_curSessionId, data, len);
-    if (ret != EC_SUCCESS) {
+    g_curBusy = true;
+    SessionAttribute attr = {
+        .dataType = TYPE_BYTES
+    };
+    g_curSessionId = OpenSession(DMS_SESSION_NAME, DMS_SESSION_NAME, GetPeerId(), DMS_MODULE_NAME, &attr);
+    if (g_curSessionId < 0) {
+        g_curSessionId = INVALID_SESSION_ID;
+        g_curBusy = false;
         return EC_FAILURE;
     }
     return EC_SUCCESS;
@@ -174,30 +197,5 @@ void CloseDMSSession()
 {
     CloseSession(g_curSessionId);
     g_curSessionId = INVALID_SESSION_ID;
-}
-
-static void NotifyConnected(void)
-{
-    pthread_mutex_lock(&g_mutex);
-    pthread_cond_signal(&g_cond);
-    pthread_mutex_unlock(&g_mutex);
-}
-
-/* timeOut: The unit is milliseconds */
-static void WaitForConnected(int timeOut)
-{
-    pthread_mutex_lock(&g_mutex);
-    struct timespec tv;
-    GetCondTime(&tv, timeOut);
-    pthread_cond_timedwait(&g_cond, &g_mutex, &tv);
-    pthread_mutex_unlock(&g_mutex);
-}
-
-static void GetCondTime(struct timespec *tv, int timeDelay)
-{
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    long nsec = now.tv_usec * TIME_US_MS + (timeDelay % TIME_US_MS) * TIME_SS_US;
-    tv->tv_sec = now.tv_sec + nsec / TIME_US_NS + timeDelay / TIME_US_MS;
-    tv->tv_nsec = nsec % TIME_US_NS;
+    g_curBusy = false;
 }

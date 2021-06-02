@@ -24,9 +24,6 @@
 #include "dmslite_tlv_common.h"
 #include "securec.h"
 
-/* Notice: currently only four type of nodes, i.e. command id, callee bundle name and ability name,
-caller signature are supported */
-#define MAX_VALID_NODES 4
 #define MIN_VALID_NODES 2
 
 #define HIGH_BIT_MASK 0xFF
@@ -47,11 +44,6 @@ static inline bool IsNextTlvLength(uint8_t num)
 static inline void TlvByteToLength(uint8_t byte, uint16_t *len)
 {
     *len = ((*len) << TLV_LENGTH_SHIFT_BITS) | (byte & LOW_BIT_MASK);
-}
-
-static inline bool IsValidNodeNum(uint8_t num)
-{
-    return num <= MAX_VALID_NODES;
 }
 
 static TlvErrorCode TlvBytesToLength(const uint8_t *bytesBuffer, uint16_t bufLength,
@@ -144,15 +136,6 @@ static inline TlvNode* MallocTlvNode()
     return node;
 }
 
-static inline TlvErrorCode CheckNodeNum(uint8_t handledNodeNum)
-{
-    if (!IsValidNodeNum(handledNodeNum)) {
-        HILOGE("[Bad node num %d]", handledNodeNum);
-        return DMS_TLV_ERR_BAD_NODE_NUM;
-    }
-    return DMS_TLV_SUCCESS;
-}
-
 static inline TlvErrorCode CheckNodeSequence(const TlvNode *lastNode, const TlvNode *curNode)
 {
     if (lastNode == curNode) {
@@ -210,8 +193,6 @@ TlvErrorCode TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TlvNo
 
         /* check whether there is need to continue processing the remaining nodes */
         handledNodeNum++;
-        errCode = CheckNodeNum(handledNodeNum);
-        BREAK_IF_FAILURE(errCode);
 
         /* check node type sequence: the type of node must appear in strictly increasing order */
         errCode = CheckNodeSequence(lastNode, curNode);
@@ -222,7 +203,8 @@ TlvErrorCode TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TlvNo
             break;
         }
 
-        HILOGD("[curNode length:%d type:%d]", curNode->length, curNode->type);
+        HILOGD("[curNode length:%d type:%d handledNodeNum:%d]", curNode->length,
+            curNode->type, handledNodeNum);
         /* if all is ok, then move to the T part of the next tlv node */
         nodeStartAddr += curTlvNodeLen;
         lastNode = curNode;

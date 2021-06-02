@@ -19,6 +19,8 @@
 #include "securec.h"
 #include "softbus_bus_center.h"
 
+#define DMSLITE_BUNDLE_NAME "dmslite"
+
 static char g_peerDevId[NETWORK_ID_BUF_LEN] = {0};
 
 static void onNodeOnline(NodeBasicInfo *info);
@@ -57,7 +59,7 @@ void onNodeBasicInfoChanged(NodeBasicInfoType type, NodeBasicInfo *info)
 
 int32_t AddDevMgrListener()
 {
-    return RegNodeDeviceStateCb(&g_networkListener);
+    return RegNodeDeviceStateCb(DMSLITE_BUNDLE_NAME, &g_networkListener);
 }
 
 int32_t UnRegisterDevMgrListener()

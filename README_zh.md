@@ -124,5 +124,5 @@ startAbility(want); // 按照Want启动指定FA，want参数命名以实际开�
 
 **[分布式任务调度子系统](zh-cn_topic_0000001115719369.md)**
 
-[dms\_fwk\_lite](https://gitee.com/openharmony/distributedschedule_services_dtbschedmgr_lite)
+[dms\_fwk\_lite](https://gitee.com/openharmony/distributedschedule_dms_fwk_lite)
 
