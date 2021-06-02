@@ -157,7 +157,8 @@ static uint8_t EncodeLengthOfTlv(uint16_t length)
     uint8_t bytesNum = MIN_BYTE_NUM_OF_LENGTH_FILED;
     g_buffer[g_counter] = ((length >> TLV_LENGTH_SHIFT_BITS) & LOW_BIT_MASK);
     if (g_buffer[g_counter]) {
-        g_buffer[g_counter++] |= HIGH_BIT_MASK;
+        char highByte = (char)((uint8_t)g_buffer[g_counter] | HIGH_BIT_MASK);
+        g_buffer[g_counter++] = highByte;
         g_buffer[g_counter++] = (length & LOW_BIT_MASK);
         bytesNum = MAX_BYTE_NUM_OF_LENGTH_FILED;
     } else {

@@ -27,6 +27,8 @@
 #include "ohos_errno.h"
 #include "securec.h"
 
+#define DMS_VERSION_VALUE 200
+
 int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone)
 {
@@ -35,6 +37,10 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
 
 int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo)
 {
+    if (want == NULL || abilityInfo == NULL) {
+        HILOGE("[param error!]]");
+        return DMS_EC_FAILURE;
+    }
     Want *reqdata = (Want *)DMS_ALLOC(sizeof(Want));
     if (memset_s(reqdata, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
         HILOGE("[want memset failed]");
@@ -57,7 +63,7 @@ int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo)
 int32_t StartRemoteAbility(const Want *want)
 {
     HILOGE("[StartRemoteAbility]");
-    if (want == NULL || want->data == NULL) {
+    if (want == NULL || want->data == NULL || want->element == NULL) {
         return DMS_EC_INVALID_PARAMETER;
     }
     char *bundleName = (char *)want->data;
@@ -76,7 +82,7 @@ int32_t StartRemoteAbility(const Want *want)
     } else {
         PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, "");
     }
+    PACKET_MARSHALL_HELPER(Uint16, DMS_VERSION, DMS_VERSION_VALUE);
     HILOGE("[StartRemoteAbility len:%d]", GetPacketSize());
-    int32_t ret = SendDmsMessage(GetPacketBufPtr(), GetPacketSize());
-    return ret;
+    return SendDmsMessage(GetPacketBufPtr(), GetPacketSize());
 }
