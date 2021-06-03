@@ -83,17 +83,17 @@ HWTEST_F(FamgrTest, StartRemoteAbility_001, TestSize.Level0) {
     PreprareBuild();
 
     Want want;
-    if (FillWant(&want, "com.huawei.launcher", "MainAbility") != 0) {
+    if (FillWant(&want, "ohos.dms.example", "MainAbility") != 0) {
         return;
     }
-    want.data = (void *)"com.huawei.helloworld";
+    want.data = (void *)"ohos.dms.helloworld";
     want.dataLength = 22;
     StartRemoteAbility(&want);
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
         const TlvNode *tlvHead = reinterpret_cast<const TlvNode *>(dmsMsg);
         EXPECT_EQ(errCode, DMS_TLV_SUCCESS);
         EXPECT_EQ(UnMarshallUint16(tlvHead, DMS_TLV_TYPE_COMMAND_ID), 1);
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME)), "com.huawei.launcher");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME)), "ohos.dms.example");
         EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_ABILITY_NAME)), "MainAbility");
     };
     RunTest((const uint8_t *)GetPacketBufPtr(), GetPacketSize(), onTlvParseDone, nullptr);
@@ -111,7 +111,7 @@ HWTEST_F(FamgrTest, StartRemoteAbility_002, TestSize.Level0) {
     PreprareBuild();
 
     Want want;
-    if (FillWant(&want, "com.huawei.launcher", "MainAbility") != 0) {
+    if (FillWant(&want, "ohos.dms.example", "MainAbility") != 0) {
         return;
     }
     StartRemoteAbility(&want);
