@@ -98,6 +98,7 @@ HWTEST_F(FamgrTest, StartRemoteAbility_001, TestSize.Level0) {
     };
     RunTest((const uint8_t *)GetPacketBufPtr(), GetPacketSize(), onTlvParseDone, nullptr);
 
+    ClearWant(&want);
     CleanBuild();
 }
 
@@ -121,6 +122,7 @@ HWTEST_F(FamgrTest, StartRemoteAbility_002, TestSize.Level0) {
     };
     RunTest((const uint8_t *)GetPacketBufPtr(), GetPacketSize(), onTlvParseDone, nullptr);
 
+    ClearWant(&want);
     CleanBuild();
 }
 }
