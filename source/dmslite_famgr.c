@@ -17,7 +17,6 @@
 
 #include <malloc.h>
 
-#include "dmslite_feature.h"
 #include "dmslite_log.h"
 #include "dmslite_pack.h"
 #include "dmslite_session.h"
@@ -35,7 +34,8 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     return EC_SUCCESS;
 }
 
-int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo)
+int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
+        IDmsListener *callback)
 {
     if (want == NULL || abilityInfo == NULL) {
         HILOGE("[param error!]]");
@@ -66,6 +66,7 @@ int32_t StartRemoteAbility(const Want *want)
     if (want == NULL || want->data == NULL || want->element == NULL) {
         return DMS_EC_INVALID_PARAMETER;
     }
+
     char *bundleName = (char *)want->data;
     BundleInfo bundleInfo;
     if (memset_s(&bundleInfo, sizeof(BundleInfo), 0x00, sizeof(BundleInfo)) != EOK) {

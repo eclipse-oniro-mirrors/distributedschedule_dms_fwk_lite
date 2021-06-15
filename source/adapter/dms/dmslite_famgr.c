@@ -15,7 +15,6 @@
 
 #include "dmslite_famgr.h"
 
-#include "dmsfwk_interface.h"
 #include "dmslite.h"
 #include "dmslite_log.h"
 #include "dmslite_pack.h"
@@ -172,7 +171,8 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     return StartAbilityFromRemoteInner(bundleName, abilityName);
 }
 
-int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo)
+int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
+        IDmsListener *callback)
 {
     return EOK;
 }
