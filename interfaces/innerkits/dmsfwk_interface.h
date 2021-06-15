@@ -16,9 +16,9 @@
 #ifndef OHOS_DMSFWK_INTERFACE_H
 #define OHOS_DMSFWK_INTERFACE_H
 
+#include "ability_info.h"
 #include "iunknown.h"
 #include "want.h"
-#include "ability_info.h"
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -47,8 +47,17 @@ typedef enum {
 } DmsLiteCommonErrorCode;
 
 typedef struct {
+    void (*OnResultCallback)(const void *data, int32_t ret);
+} IDmsListener;
+
+typedef struct {
+    uint32_t uid;
+} CallerInfo;
+
+typedef struct {
     INHERIT_IUNKNOWN;
-    int32_t (*StartRemoteAbility)(Want *want, AbilityInfo *abilityInfo);
+    int32_t (*StartRemoteAbility)(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
+        IDmsListener *callback);
 } DmsProxy;
 
 #ifdef __cplusplus
