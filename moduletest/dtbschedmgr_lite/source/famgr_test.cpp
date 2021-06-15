@@ -36,6 +36,8 @@ protected:
     virtual void SetUp() { }
     virtual void TearDown() { }
 
+    constexpr static char* CALLERNAME = "ohos.dms.helloworld";
+
     static int8_t FillWant(Want *want, const char *bundleName, const char *abilityName)
     {
         if (memset_s(want, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
@@ -79,15 +81,19 @@ protected:
  * @tc.type: FUNC
  * @tc.require: SR000FKTLR AR000FKVSU
  */
-HWTEST_F(FamgrTest, StartRemoteAbility_001, TestSize.Level0) {
+HWTEST_F(FamgrTest, StartRemoteAbility_001, TestSize.Level1) {
     PreprareBuild();
 
     Want want;
     if (FillWant(&want, "ohos.dms.example", "MainAbility") != 0) {
         return;
     }
-    want.data = (void *)"ohos.dms.helloworld";
-    want.dataLength = 22;
+    want.data = (char *)malloc(sizeof(CALLERNAME));
+    if (memset_s(want.data, sizeof(CALLERNAME), 0x00, sizeof(CALLERNAME)) != EOK) {
+        return;
+    }
+    (void)strncpy_s((char *)want.data, sizeof(CALLERNAME), (char *)CALLERNAME, sizeof(CALLERNAME));
+    want.dataLength = sizeof(CALLERNAME);
     StartRemoteAbility(&want);
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
         const TlvNode *tlvHead = reinterpret_cast<const TlvNode *>(dmsMsg);
@@ -108,7 +114,7 @@ HWTEST_F(FamgrTest, StartRemoteAbility_001, TestSize.Level0) {
  * @tc.type: FUNC
  * @tc.require: SR000FKTD0 AR000FM5TN
  */
-HWTEST_F(FamgrTest, StartRemoteAbility_002, TestSize.Level0) {
+HWTEST_F(FamgrTest, StartRemoteAbility_002, TestSize.Level1) {
     PreprareBuild();
 
     Want want;
