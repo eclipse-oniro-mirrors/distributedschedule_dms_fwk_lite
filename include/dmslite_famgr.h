@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 
+#include "dmsfwk_interface.h"
 #include "dmslite_inner_common.h"
 #include "bundle_manager.h"
 #include "want.h"
@@ -39,7 +40,8 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone);
 
 int32_t StartRemoteAbility(const Want *want);
-int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo);
+int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
+        IDmsListener *callback);
 #ifdef __cplusplus
 #if __cplusplus
 }

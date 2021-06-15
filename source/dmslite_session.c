@@ -28,8 +28,8 @@
 #include "dmslite_utils.h"
 
 #include "securec.h"
-#include "softbus_common.h"
 #include "session.h"
+#include "softbus_common.h"
 
 #define DMS_SESSION_NAME "ohos.distributedschedule.dms.proxymanager"
 #define DMS_MODULE_NAME "dms"
