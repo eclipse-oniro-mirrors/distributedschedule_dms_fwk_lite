@@ -15,9 +15,11 @@
 
 #include "dmslite_permission.h"
 
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-#include "dmsfwk_interface.h"
 #include "dmslite_log.h"
 
 #ifdef APP_PLATFORM_WATCHGT
@@ -30,6 +32,13 @@
 
 #define DELIMITER_LENGTH 1
 #define GET_BUNDLE_WITHOUT_ABILITIES 0
+#ifndef APP_PLATFORM_WATCHGT
+#define NATIVE_APPID_DIR "/system/native_appid/"
+#define APPID_FILE_PREFIX "uid_"
+#define APPID_FILE_SUFFIX "_appid"
+#define MAX_FILE_PATH_LEN 64
+#define MAX_NATIVE_SERVICE_UID 99
+#endif
 
 #ifndef APP_PLATFORM_WATCHGT
 static bool GetBmsInterface(struct BmsServerProxy **bmsInterface)
@@ -104,4 +113,101 @@ int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
     }
 
     return DMS_EC_SUCCESS;
+}
+
+static int32_t GetAppIdFromFile(const char *filePath, char *appId, uint32_t len)
+{
+    int32_t fd = open(filePath, O_RDONLY, S_IRUSR);
+    if (fd < 0) {
+        HILOGE("[open file failed]");
+        return DMS_EC_FAILURE;
+    }
+    int32_t fileLen = lseek(fd, 0, SEEK_END);
+    if ((fileLen <=0) || (fileLen >= len)) {
+        HILOGE("[fileLen is invalid or larger than available space, fileLen=%d]", fileLen);
+        close(fd);
+        return DMS_EC_FAILURE;
+    }
+    int32_t ret = lseek(fd, 0, SEEK_SET);
+    if (ret < 0) {
+        HILOGE("[lseek failed, ret=%d]", ret);
+        close(fd);
+        return DMS_EC_FAILURE;
+    }
+    ret = read(fd, appId, fileLen);
+    if (ret < 0) {
+        HILOGE("[read appId failed, ret=%d]", ret);
+        close(fd);
+        return DMS_EC_FAILURE;
+    }
+    close(fd);
+    return DMS_EC_SUCCESS;
+}
+
+static int32_t GetAppIdFromBms(const CallerInfo *callerInfo, char *appId, uint32_t len)
+{
+    BundleInfo bundleInfo;
+    if (memset_s(&bundleInfo, sizeof(BundleInfo), 0x00, sizeof(BundleInfo)) != EOK) {
+        HILOGE("[bundleInfo memset failed]");
+        return DMS_EC_FAILURE;
+    }
+    int32_t errCode;
+#ifndef APP_PLATFORM_WATCHGT
+    char *bundleName = NULL;
+    uid_t callerUid = getuid();
+    if (callerUid == FOUNDATION_UID) {
+        /* inner-process mode */
+        struct BmsServerProxy *bmsServerProxy = NULL;
+        if (!GetBmsInterface(&bmsServerProxy)) {
+            HILOGE("[GetBmsInterface query null]");
+            return DMS_EC_GET_BMS_FAILURE;
+        }
+        if (bmsServerProxy->GetBundleNameForUid(callerInfo->uid, &bundleName) != EC_SUCCESS) {
+            HILOGE("[GetBundleNameForUid failed]");
+            return DMS_EC_FAILURE;
+        }
+        errCode = bmsServerProxy->GetBundleInfo(bundleName, GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+    } else if (callerUid == SHELL_UID) {
+        /* inter-process mode (mainly called in xts testsuit process started by shell) */
+        if (GetBundleNameForUid(callerInfo->uid, &bundleName) != EC_SUCCESS) {
+            HILOGE("[GetBundleNameForUid failed]");
+            return DMS_EC_FAILURE;
+        }
+        errCode = GetBundleInfo(bundleName, GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+    } else {
+        errCode = DMS_EC_FAILURE;
+    }
+#else
+    errCode = GetBundleInfo(callerInfo->bundleName, GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+#endif
+    if (errCode != EC_SUCCESS) {
+        HILOGE("[GetBundleInfo failed]");
+        return DMS_EC_GET_BUNDLEINFO_FAILURE;
+    }
+    if (strcpy_s(appId, len, bundleInfo.appId) != EOK) {
+        HILOGE("[appId strcpy failed]");
+        return DMS_EC_FAILURE;
+    }
+    return DMS_EC_SUCCESS;
+}
+
+int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len)
+{
+    if ((appId == NULL) || (len == 0)) {
+        HILOGE("[appId is invalid]");
+        return DMS_EC_INVALID_PARAMETER;
+    }
+#ifndef APP_PLATFORM_WATCHGT
+    if (callerInfo->uid <= MAX_NATIVE_SERVICE_UID) {
+        char filePath[MAX_FILE_PATH_LEN] = {0};
+        int32_t ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s%s%d%s", NATIVE_APPID_DIR, APPID_FILE_PREFIX,
+                                callerInfo->uid, APPID_FILE_SUFFIX);
+        if (ret < 0) {
+            HILOGE("[filePath sprintf failed]");
+            return DMS_EC_FAILURE;
+        }
+        return GetAppIdFromFile(filePath, appId, len);
+    }
+#endif
+    return GetAppIdFromBms(callerInfo, appId, len);
 }

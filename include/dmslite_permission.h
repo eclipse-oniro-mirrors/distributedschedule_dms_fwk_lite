@@ -17,10 +17,18 @@
 #define OHOS_DISTRIBUTEDSCHEDULE_PERMISSION_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "bundle_info.h"
+#include "dmsfwk_interface.h"
 #include "dmslite_parser.h"
 #include "dmslite_inner_common.h"
+
+#ifdef __cplusplus
+#if __cplusplus
+extern "C" {
+#endif
+#endif
 
 /**
 * @brief Checks whether the remote has the permission of interaction with local FAs
@@ -30,4 +38,20 @@
 int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo);
 char* GetCallerSignature(const char *remoteName, BundleInfo *bundleInfo);
 char* GetRemoteSignature(const char *remoteName, BundleInfo *bundleInfo);
+
+/**
+* @brief Get appId
+* @param callerInfo caller information, which includes uid and bundleName
+* @param appId application id, which uniquely identifies an application
+* @param len length of appId
+* @return DmsLiteCommonErrorCode
+*/
+int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len);
+
+#ifdef __cplusplus
+#if __cplusplus
+}
+#endif
+#endif
+
 #endif // OHOS_DISTRIBUTEDSCHEDULE_PERMISSION_H

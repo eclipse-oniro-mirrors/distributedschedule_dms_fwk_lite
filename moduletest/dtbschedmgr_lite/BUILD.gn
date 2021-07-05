@@ -19,6 +19,7 @@ if (ohos_kernel_type == "liteos_a" || ohos_kernel_type == "linux") {
     output_extension = "bin"
     sources = [
       "source/famgr_test.cpp",
+      "source/permission_test.cpp",
       "source/tlv_parse_test.cpp"
     ]
 
