@@ -51,13 +51,13 @@ typedef struct {
 } IDmsListener;
 
 typedef struct {
-    uint32_t uid;
+    int32_t uid;
 } CallerInfo;
 
 typedef struct {
     INHERIT_IUNKNOWN;
-    int32_t (*StartRemoteAbility)(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
-        IDmsListener *callback);
+    int32_t (*StartRemoteAbility)(const Want *want, const CallerInfo *callerInfo,
+        const IDmsListener *callback);
 } DmsProxy;
 
 #ifdef __cplusplus

@@ -17,16 +17,25 @@
 
 #include <malloc.h>
 
+#include "dmslite_feature.h"
 #include "dmslite_log.h"
 #include "dmslite_pack.h"
+#include "dmslite_permission.h"
 #include "dmslite_session.h"
 #include "dmslite_tlv_common.h"
 #include "dmslite_utils.h"
 
+#include "message.h"
 #include "ohos_errno.h"
 #include "securec.h"
 
 #define DMS_VERSION_VALUE 200
+#define MAX_APPID_LEN 100
+
+static int32_t FillRequestData(RequestData *reqdata, const Want *want,
+    const CallerInfo *callerInfo, const IDmsListener *callback);
+static void FreeRequestData(const Want *want, const CallerInfo *callerInfo);
+static int32_t MarshallDmsMessage(const Want *want, const CallerInfo *callerInfo);
 
 int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone)
@@ -34,56 +43,173 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     return EC_SUCCESS;
 }
 
-int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
-        IDmsListener *callback)
+int32_t StartRemoteAbilityInner(const Want *want, const CallerInfo *callerInfo,
+    const IDmsListener *callback)
 {
-    if (want == NULL || abilityInfo == NULL) {
+    if (want == NULL || want->element == NULL || callerInfo == NULL) {
         HILOGE("[param error!]]");
         return DMS_EC_FAILURE;
     }
-    Want *reqdata = (Want *)DMS_ALLOC(sizeof(Want));
-    if (memset_s(reqdata, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
-        HILOGE("[want memset failed]");
+    RequestData *reqdata = (RequestData *)DMS_ALLOC(sizeof(RequestData));
+    if (reqdata == NULL) {
+        HILOGE("[mem alloc error!]]");
         return DMS_EC_FAILURE;
     }
-    want->data = (void *)abilityInfo->bundleName;
-    want->dataLength = strlen(abilityInfo->bundleName);
-    reqdata->data = want->data;
-    reqdata->element = want->element;
-    reqdata->dataLength = want->dataLength;
+    if (memset_s(reqdata, sizeof(RequestData), 0x00, sizeof(RequestData)) != EOK) {
+        HILOGE("[RequestData memset failed]");
+        return DMS_EC_FAILURE;
+    }
+
+    if (FillRequestData(reqdata, want, callerInfo, callback) != 0) {
+        HILOGE("[FillRequestData failed]");
+        return DMS_EC_FAILURE;
+    }
+
     Request request = {
         .msgId = START_REMOTE_ABILITY,
         .data = (void *)reqdata,
-        .len = sizeof(Want),
+        .len = sizeof(RequestData),
         .msgValue = 0
     };
-    return SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
+    int32_t result = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
+    if (result != EC_SUCCESS) {
+        FreeRequestData(reqdata->want, reqdata->callerInfo);
+        HILOGD("[StartRemoteAbilityInner SendRequest errCode = %d]", result);
+    }
+    return result;
 }
 
-int32_t StartRemoteAbility(const Want *want)
+int32_t StartRemoteAbility(const Want *want, const CallerInfo *callerInfo,
+    const IDmsListener *callback)
 {
-    HILOGE("[StartRemoteAbility]");
-    if (want == NULL || want->data == NULL || want->element == NULL) {
+    HILOGI("[StartRemoteAbility]");
+    if (want == NULL || want->element == NULL || callerInfo == NULL) {
+        FreeRequestData(want, callerInfo);
         return DMS_EC_INVALID_PARAMETER;
     }
-
-    char *bundleName = (char *)want->data;
-    BundleInfo bundleInfo;
-    if (memset_s(&bundleInfo, sizeof(BundleInfo), 0x00, sizeof(BundleInfo)) != EOK) {
-        HILOGE("[bundleInfo memset failed]");
+    if (IsDmsBusy()) {
+        FreeRequestData(want, callerInfo);
+        HILOGI("[StartRemoteAbility dms busy]");
         return DMS_EC_FAILURE;
     }
-    GetBundleInfo(bundleName, 0, &bundleInfo);
-    PreprareBuild();
+#ifndef XTS_SUITE_TEST
+    if (!PreprareBuild()) {
+        FreeRequestData(want, callerInfo);
+        return DMS_EC_FAILURE;
+    }
+#endif
+    if (MarshallDmsMessage(want, callerInfo) != 0) {
+        FreeRequestData(want, callerInfo);
+        return DMS_EC_FAILURE;
+    }
+#ifndef XTS_SUITE_TEST
+    int32_t ret = SendDmsMessage(GetPacketBufPtr(), GetPacketSize(),
+        want->element->deviceId, callback);
+    FreeRequestData(want, callerInfo);
+    return ret;
+#else
+    return EOK;
+#endif
+}
+
+static int32_t MarshallDmsMessage(const Want *want, const CallerInfo *callerInfo)
+{
     PACKET_MARSHALL_HELPER(Uint16, COMMAND_ID, DMS_MSG_CMD_START_FA);
+    PACKET_MARSHALL_HELPER(Uint16, DMS_VERSION, DMS_VERSION_VALUE);
     PACKET_MARSHALL_HELPER(String, CALLEE_BUNDLE_NAME, want->element->bundleName);
     PACKET_MARSHALL_HELPER(String, CALLEE_ABILITY_NAME, want->element->abilityName);
-    if (bundleInfo.appId != NULL) {
-        PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, bundleInfo.appId);
-    } else {
-        PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, "");
+
+    char appId[MAX_APPID_LEN] = {0};
+    int32_t ret = GetAppId(callerInfo, appId, MAX_APPID_LEN);
+    if (ret != DMS_EC_SUCCESS) {
+        HILOGI("[StartRemoteAbility GetAppID error = %d]", ret);
+        return DMS_EC_FAILURE;
     }
-    PACKET_MARSHALL_HELPER(Uint16, DMS_VERSION, DMS_VERSION_VALUE);
-    HILOGE("[StartRemoteAbility len:%d]", GetPacketSize());
-    return SendDmsMessage(GetPacketBufPtr(), GetPacketSize());
+    PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, appId);
+
+    if (want->data != NULL && want->dataLength > 0) {
+        RAWDATA_MARSHALL_HELPER(RawData, CALLER_PAYLOAD, want->data, want->dataLength);
+    }
+    return EOK;
+}
+
+static int32_t FillCallerInfoData(RequestData *reqdata, const CallerInfo *callerInfo)
+{
+    if (callerInfo == NULL || reqdata == NULL) {
+        return DMS_EC_FAILURE;
+    }
+    CallerInfo *callerData = (CallerInfo *)DMS_ALLOC(sizeof(CallerInfo));
+    if (callerData == NULL) {
+        return DMS_EC_FAILURE;
+    }
+    if (memset_s(callerData, sizeof(CallerInfo), 0x00, sizeof(CallerInfo)) != EOK) {
+        HILOGE("[CallerInfo memset error]");
+        return DMS_EC_FAILURE;
+    }
+    callerData->uid = callerInfo->uid;
+    reqdata->callerInfo = callerData;
+    return DMS_EC_SUCCESS;
+}
+
+static int32_t FillRequestData(RequestData *reqdata, const Want *want,
+    const CallerInfo *callerInfo, const IDmsListener *callback)
+{
+    Want *wantData = (Want *)DMS_ALLOC(sizeof(Want));
+    if (wantData == NULL) {
+        return DMS_EC_FAILURE;
+    }
+    if (memset_s(wantData, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
+        FreeRequestData(wantData, NULL);
+        return DMS_EC_FAILURE;
+    }
+    ElementName elementData;
+    if (memset_s(&elementData, sizeof(ElementName), 0x00, sizeof(ElementName)) != EOK) {
+        FreeRequestData(wantData, NULL);
+        return DMS_EC_FAILURE;
+    }
+    if (!(SetElementBundleName(&elementData, want->element->bundleName)
+        && SetElementAbilityName(&elementData, want->element->abilityName)
+        && SetElementDeviceID(&elementData, want->element->deviceId)
+        && SetWantElement(wantData, elementData))) {
+        HILOGE("[FillRequestData error]");
+        ClearElement(&elementData);
+        ClearWant(wantData);
+        FreeRequestData(wantData, NULL);
+        return DMS_EC_FAILURE;
+    }
+    if (want->data != NULL && want->dataLength > 0) {
+        void *data = DMS_ALLOC(want->dataLength);
+        if (data == NULL) {
+            FreeRequestData(wantData, NULL);
+            return DMS_EC_FAILURE;
+        }
+        if (memcpy_s(data, want->dataLength, want->data, want->dataLength) != EOK) {
+            FreeRequestData(wantData, NULL);
+            return DMS_EC_FAILURE;
+        }
+        wantData->data = data;
+        wantData->dataLength = want->dataLength;
+    }
+    ClearElement(&elementData);
+    reqdata->want = wantData;
+
+    if (FillCallerInfoData(reqdata, callerInfo) != DMS_EC_SUCCESS) {
+        FreeRequestData(wantData, NULL);
+        return DMS_EC_FAILURE;
+    }
+
+    reqdata->callback = (IDmsListener *)callback;
+    return DMS_EC_SUCCESS;
+}
+
+static void FreeRequestData(const Want *want, const CallerInfo *callerInfo)
+{
+    if (want != NULL) {
+        ClearWant((Want *)want);
+        DMS_FREE(want);
+    }
+
+    if (callerInfo != NULL) {
+        DMS_FREE(callerInfo);
+    }
 }

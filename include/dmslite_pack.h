@@ -26,14 +26,6 @@ extern "C" {
 #endif
 #endif
 
-typedef enum {
-    COMMAND_ID = 1,
-    CALLEE_BUNDLE_NAME = 2,
-    CALLEE_ABILITY_NAME = 3,
-    CALLER_SIGNATURE = 4,
-    DMS_VERSION = 5
-} FieldType;
-
 bool PreprareBuild();
 bool MarshallUint8(uint8_t field, FieldType fieldType);
 bool MarshallUint16(uint16_t field, FieldType fieldType);
@@ -44,6 +36,7 @@ bool MarshallInt16(int16_t field, FieldType fieldType);
 bool MarshallInt32(int32_t field, FieldType fieldType);
 bool MarshallInt64(int64_t field, FieldType fieldType);
 bool MarshallString(const char* field, uint8_t type);
+bool MarshallRawData(const void *field, uint8_t type, uint16_t length);
 uint16_t GetPacketSize();
 char* GetPacketBufPtr();
 void CleanBuild();

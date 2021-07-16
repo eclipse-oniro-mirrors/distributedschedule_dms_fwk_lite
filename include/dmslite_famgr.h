@@ -29,6 +29,12 @@ extern "C" {
 #endif
 #endif
 
+typedef struct {
+    Want *want;
+    CallerInfo *callerInfo;
+    IDmsListener *callback;
+} RequestData;
+
 /**
 * @brief Starts ability from remote
 * @param bundleName callee bundle name, e.g. com.huawei.helloworld
@@ -39,9 +45,11 @@ extern "C" {
 int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone);
 
-int32_t StartRemoteAbility(const Want *want);
-int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
-        IDmsListener *callback);
+int32_t StartRemoteAbility(const Want *want, const CallerInfo *callerInfo,
+    const IDmsListener *callback);
+
+int32_t StartRemoteAbilityInner(const Want *want, const CallerInfo *callerInfo,
+    const IDmsListener *callback);
 #ifdef __cplusplus
 #if __cplusplus
 }

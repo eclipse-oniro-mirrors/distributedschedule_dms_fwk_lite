@@ -54,20 +54,21 @@ protected:
 HWTEST_F(TlvParseTest, NormalPackage_001, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x02, 0x00, 0x01,
-        0x02, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68, 0x75, 0x61, 0x77, 0x65, 0x69,
+        0x02, 0x02, 0x00, 0x64,
+        0x03, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x68, 0x75, 0x61, 0x77, 0x65, 0x69,
         0x2e, 0x6c, 0x61, 0x75, 0x6e, 0x63, 0x68, 0x65, 0x72, 0x00,
-        0x03, 0x0c, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x62, 0x69, 0x6c, 0x69, 0x74,
+        0x04, 0x0c, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x62, 0x69, 0x6c, 0x69, 0x74,
         0x79, 0x00,
-        0x04, 0x0a, 0x70, 0x75, 0x62, 0x6C, 0x69, 0x63, 0x6B, 0x65, 0x79, 0x00
+        0x05, 0x0a, 0x70, 0x75, 0x62, 0x6C, 0x69, 0x63, 0x6B, 0x65, 0x79, 0x00
     };
 
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
         const TlvNode *tlvHead = reinterpret_cast<const TlvNode *>(dmsMsg);
         EXPECT_EQ(errCode, DMS_TLV_SUCCESS);
-        EXPECT_EQ(UnMarshallUint16(tlvHead, DMS_TLV_TYPE_COMMAND_ID), 1);
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME)), "com.huawei.launcher");
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_ABILITY_NAME)), "MainAbility");
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLER_SIGNATURE)), "publickey");
+        EXPECT_EQ(UnMarshallUint16(tlvHead, COMMAND_ID), 1);
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_BUNDLE_NAME)), "com.huawei.launcher");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_ABILITY_NAME)), "MainAbility");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLER_SIGNATURE)), "publickey");
     };
 
     RunTest(buffer, sizeof(buffer), onTlvParseDone, nullptr);
@@ -84,7 +85,8 @@ HWTEST_F(TlvParseTest, NormalPackage_001, TestSize.Level1) {
 HWTEST_F(TlvParseTest, NormalPackage_002, TestSize.Level1) {
     uint8_t buffer[] = {
         0x01, 0x02, 0x00, 0x01,
-        0x02, 0x82, 0x00, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x62, 0x63, 0x64, 0x65,
+        0x02, 0x02, 0x00, 0x64,
+        0x03, 0x82, 0x00, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x62, 0x63, 0x64, 0x65,
         0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71,
         0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x41, 0x42, 0x43,
         0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
@@ -106,9 +108,9 @@ HWTEST_F(TlvParseTest, NormalPackage_002, TestSize.Level1) {
         0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
         0x7a, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x2e,
         0x68, 0x75, 0x61, 0x77, 0x65, 0x69, 0x00,
-        0x03, 0x0c, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x62, 0x69, 0x6c, 0x69, 0x74,
+        0x04, 0x0c, 0x4d, 0x61, 0x69, 0x6e, 0x41, 0x62, 0x69, 0x6c, 0x69, 0x74,
         0x79, 0x00,
-        0x04, 0x0a, 0x70, 0x75, 0x62, 0x6C, 0x69, 0x63, 0x6B, 0x65, 0x79, 0x00
+        0x05, 0x0a, 0x70, 0x75, 0x62, 0x6C, 0x69, 0x63, 0x6B, 0x65, 0x79, 0x00
     };
 
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
@@ -121,10 +123,10 @@ HWTEST_F(TlvParseTest, NormalPackage_002, TestSize.Level1) {
         }
         ss << "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ";
         ss << ".huawei";
-        EXPECT_EQ(UnMarshallUint16(tlvHead, DMS_TLV_TYPE_COMMAND_ID), 1);
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME)), ss.str());
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_ABILITY_NAME)), "MainAbility");
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLER_SIGNATURE)), "publickey");
+        EXPECT_EQ(UnMarshallUint16(tlvHead, COMMAND_ID), 1);
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_BUNDLE_NAME)), ss.str());
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_ABILITY_NAME)), "MainAbility");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLER_SIGNATURE)), "publickey");
     };
 
     RunTest(buffer, sizeof(buffer), onTlvParseDone, nullptr);
@@ -312,9 +314,9 @@ HWTEST_F(TlvParseTest, AbnormalPackageBadSource_001, TestSize.Level1) {
 
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
         const TlvNode *tlvHead = reinterpret_cast<const TlvNode *>(dmsMsg);
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME)), "");
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_ABILITY_NAME)), "");
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLER_SIGNATURE)), "");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_BUNDLE_NAME)), "");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_ABILITY_NAME)), "");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLER_SIGNATURE)), "");
     };
 
     RunTest(buffer, sizeof(buffer), onTlvParseDone, nullptr);

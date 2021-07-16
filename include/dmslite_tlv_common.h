@@ -47,25 +47,20 @@ typedef enum {
     DMS_TLV_ERR_BAD_SOURCE = 7,
 } TlvErrorCode;
 
-typedef struct {
-    uint32_t commandId;
-    char *calleeBundleName;
-    char *calleeAbilityName;
-    char *callerSignature;
-} TlvDmsMsgInfo;
+typedef enum {
+    COMMAND_ID = 1,
+    DMS_VERSION = 2,
+    CALLEE_BUNDLE_NAME = 3,
+    CALLEE_ABILITY_NAME = 4,
+    CALLER_SIGNATURE = 5,
+    CALLER_PAYLOAD = 6,
+    REPLY_ERR_CODE = 0xFF
+} FieldType;
 
 typedef struct {
     uint16_t payloadLength;
     const uint8_t *payload;
 } CommuMessage;
-
-enum DmsMsgTlvType {
-    DMS_TLV_TYPE_COMMAND_ID = 0x01,
-    DMS_TLV_TYPE_CALLEE_BUNDLE_NAME,
-    DMS_TLV_TYPE_CALLEE_ABILITY_NAME,
-    DMS_TLV_TYPE_CALLER_SIGNATURE,
-    REPLY_ERR_CODE = 0xFF
-};
 
 enum DmsCommuMsgCmdType {
     DMS_MSG_CMD_START_FA = 0x01,
