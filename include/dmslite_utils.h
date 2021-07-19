@@ -31,6 +31,15 @@
         } \
     } while (0)
 
+#define RAWDATA_MARSHALL_HELPER(type, fieldType, field, length) \
+    do { \
+        bool ret = Marshall##type((field), (fieldType), (length)); \
+        if (!ret) { \
+            HILOGE("%{public}s marshall value failed!", __func__); \
+            CleanBuild(); \
+            return -1; \
+        } \
+    } while (0)
 
 static inline bool IsBigEndian()
 {
@@ -44,8 +53,22 @@ static inline bool IsBigEndian()
 
 #ifdef APP_PLATFORM_WATCHGT
 #define DMS_ALLOC(size) OhosMalloc(MEM_TYPE_APPFMK_LSRAM, size)
+#define DMS_FREE(a) \
+    do { \
+        if (a != NULL) { \
+            (void) OhosFree((void *)a); \
+            a = NULL; \
+        } \
+    } while (0)
 #else
 #define DMS_ALLOC(size) malloc(size)
+#define DMS_FREE(a) \
+    do { \
+        if (a != NULL) { \
+            (void) free((void *)a); \
+            a = NULL; \
+        } \
+    } while (0)
 #endif
 
 /*

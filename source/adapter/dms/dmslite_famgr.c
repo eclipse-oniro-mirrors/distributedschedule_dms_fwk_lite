@@ -171,7 +171,7 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     return StartAbilityFromRemoteInner(bundleName, abilityName);
 }
 
-int32_t StartRemoteAbilityInner(Want *want, AbilityInfo *abilityInfo, CallerInfo *callerInfo,
+int32_t StartRemoteAbilityInner(Want *want, CallerInfo *callerInfo,
         IDmsListener *callback)
 {
     return EOK;

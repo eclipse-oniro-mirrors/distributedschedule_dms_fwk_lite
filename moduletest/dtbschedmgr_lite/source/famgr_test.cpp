@@ -36,8 +36,6 @@ protected:
     virtual void SetUp() { }
     virtual void TearDown() { }
 
-    constexpr static char* CALLERNAME = "ohos.dms.helloworld";
-
     static int8_t FillWant(Want *want, const char *bundleName, const char *abilityName)
     {
         if (memset_s(want, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
@@ -88,19 +86,17 @@ HWTEST_F(FamgrTest, StartRemoteAbility_001, TestSize.Level1) {
     if (FillWant(&want, "ohos.dms.example", "MainAbility") != 0) {
         return;
     }
-    want.data = (char *)malloc(sizeof(CALLERNAME));
-    if (memset_s(want.data, sizeof(CALLERNAME), 0x00, sizeof(CALLERNAME)) != EOK) {
-        return;
-    }
-    (void)strncpy_s((char *)want.data, sizeof(CALLERNAME), (char *)CALLERNAME, sizeof(CALLERNAME));
-    want.dataLength = sizeof(CALLERNAME);
-    StartRemoteAbility(&want);
+
+    CallerInfo callerInfo = {
+        .uid = 0
+    };
+    StartRemoteAbility(&want, &callerInfo, nullptr);
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
         const TlvNode *tlvHead = reinterpret_cast<const TlvNode *>(dmsMsg);
         EXPECT_EQ(errCode, DMS_TLV_SUCCESS);
-        EXPECT_EQ(UnMarshallUint16(tlvHead, DMS_TLV_TYPE_COMMAND_ID), 1);
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME)), "ohos.dms.example");
-        EXPECT_EQ(std::string(UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_ABILITY_NAME)), "MainAbility");
+        EXPECT_EQ(UnMarshallUint16(tlvHead, COMMAND_ID), 1);
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_BUNDLE_NAME)), "ohos.dms.example");
+        EXPECT_EQ(std::string(UnMarshallString(tlvHead, CALLEE_ABILITY_NAME)), "MainAbility");
     };
     RunTest((const uint8_t *)GetPacketBufPtr(), GetPacketSize(), onTlvParseDone, nullptr);
 
@@ -121,7 +117,7 @@ HWTEST_F(FamgrTest, StartRemoteAbility_002, TestSize.Level1) {
     if (FillWant(&want, "ohos.dms.example", "MainAbility") != 0) {
         return;
     }
-    StartRemoteAbility(&want);
+    StartRemoteAbility(&want, nullptr, nullptr);
     auto onTlvParseDone = [] (int8_t errCode, const void *dmsMsg) {
         const TlvNode *tlvHead = reinterpret_cast<const TlvNode *>(dmsMsg);
         EXPECT_NE(errCode, DMS_TLV_SUCCESS);

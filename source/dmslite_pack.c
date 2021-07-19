@@ -39,7 +39,7 @@
 #define MIN_BYTE_NUM_OF_LENGTH_FILED   1
 #define MAX_BYTE_NUM_OF_LENGTH_FILED   2
 
-static char* g_buffer = NULL;
+static char g_buffer[PACKET_DATA_SIZE] = { 0 };
 static uint8_t g_counter = 0;
 
 static bool StringToHex(const char *stringValue);
@@ -51,8 +51,8 @@ static void IntToHex(uint64_t value, uint8_t typeSize);
 bool PreprareBuild()
 {
     g_counter = 0;
-    g_buffer = (char*) malloc(PACKET_DATA_SIZE);
-    if (g_buffer == NULL) {
+    if (memset_s(g_buffer, PACKET_DATA_SIZE, 0x00, PACKET_DATA_SIZE) != EOK) {
+        HILOGW("Packet buffer is not cleared");
         return false;
     }
     return true;
@@ -64,8 +64,6 @@ void CleanBuild()
     if (memset_s(g_buffer, PACKET_DATA_SIZE, 0x00, PACKET_DATA_SIZE) != EOK) {
         HILOGW("Packet buffer is not cleared");
     }
-    free(g_buffer);
-    g_buffer = NULL;
 }
 
 bool MarshallUint8(uint8_t field, FieldType fieldType)
@@ -137,13 +135,33 @@ bool MarshallString(const char *field, uint8_t type)
     return true;
 }
 
+bool MarshallRawData(const void *field, uint8_t type, uint16_t length)
+{
+    if (field == NULL) {
+        return false;
+    }
+
+    IntToHex(type, sizeof(uint8_t));
+    uint8_t bytesNum = EncodeLengthOfTlv(length);
+    if (g_counter + (TYPE_FILED_LENGTH + bytesNum + length) > PACKET_DATA_SIZE) {
+        HILOGE("MarshallString field is too big to fit");
+        return false;
+    }
+    for (uint32_t i = 0; i < length; i++) {
+        char ch = ((const char *)field)[i];
+        g_buffer[g_counter++] = ch;
+    }
+    return true;
+}
+
 static bool StringToHex(const char *stringValue)
 {
     if (stringValue == NULL) {
         return false;
     }
 
-    for (uint32_t i = 0; i < strlen(stringValue); i++) {
+    uint32_t len = strlen(stringValue);
+    for (uint32_t i = 0; i < len; i++) {
         char ch = stringValue[i];
         g_buffer[g_counter++] = ch;
     }

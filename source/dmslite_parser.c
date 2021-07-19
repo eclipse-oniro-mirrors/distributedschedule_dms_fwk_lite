@@ -273,7 +273,7 @@ int32_t ProcessCommuMsg(const CommuMessage *commuMessage, const IDmsFeatureCallb
         return DMS_EC_PARSE_TLV_FAILURE;
     }
 
-    uint16_t commandId = UnMarshallUint16(tlvHead, DMS_TLV_TYPE_COMMAND_ID);
+    uint16_t commandId = UnMarshallUint16(tlvHead, COMMAND_ID);
     HILOGI("[ProcessCommuMsg commandId %d]", commandId);
     switch (commandId) {
         case DMS_MSG_CMD_START_FA: {

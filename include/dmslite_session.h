@@ -18,6 +18,8 @@
 
 #include <stdint.h>
 
+#include "dmsfwk_interface.h"
+
 #ifdef __cplusplus
 #if __cplusplus
 extern "C" {
@@ -28,12 +30,14 @@ void InitSoftbusService();
 
 int32_t CreateDMSSessionServer();
 int32_t CloseDMSSessionServer();
-int32_t SendDmsMessage(char *data, int32_t len);
+int32_t SendDmsMessage(char *data, int32_t len, const char *deviceId, const IDmsListener *callback);
 int32_t OpenDMSSession();
 void CloseDMSSession();
+void InvokeCallback(const void *data, int32_t result);
 void HandleSessionClosed(int32_t sessionId);
 int32_t HandleSessionOpened(int32_t sessionId);
 void HandleBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen);
+bool IsDmsBusy();
 
 #ifdef __cplusplus
 #if __cplusplus

@@ -79,9 +79,15 @@ static BOOL OnMessage(Feature *feature, Request *request)
 
     /* process for a specific feature-level msgId can be added below */
     switch (request->msgId) {
-        case START_REMOTE_ABILITY:
-            StartRemoteAbility((const Want *)request->data);
+        case START_REMOTE_ABILITY: {
+            if (request->data != NULL) {
+                const RequestData *data = (const RequestData *)request->data;
+                StartRemoteAbility(data->want, data->callerInfo, data->callback);
+            } else {
+                HILOGE("[START_REMOTE_ABILITY request is NULL]");
+            }
             break;
+        }
         case SESSION_OPEN:
             HandleSessionOpened(request->msgValue);
             break;

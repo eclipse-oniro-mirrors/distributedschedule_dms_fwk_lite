@@ -24,9 +24,9 @@
 
 int32_t StartAbilityFromRemoteHandler(const TlvNode *tlvHead, StartAbilityCallback onStartAbilityDone)
 {
-    const char *calleeBundleName = UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_BUNDLE_NAME);
-    const char *calleeAbilityName = UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLEE_ABILITY_NAME);
-    const char *callerSignature = UnMarshallString(tlvHead, DMS_TLV_TYPE_CALLER_SIGNATURE);
+    const char *calleeBundleName = UnMarshallString(tlvHead, CALLEE_BUNDLE_NAME);
+    const char *calleeAbilityName = UnMarshallString(tlvHead, CALLEE_ABILITY_NAME);
+    const char *callerSignature = UnMarshallString(tlvHead, CALLER_SIGNATURE);
 
     PermissionCheckInfo permissionCheckInfo;
     permissionCheckInfo.calleeAbilityName = calleeAbilityName;
@@ -42,6 +42,8 @@ int32_t StartAbilityFromRemoteHandler(const TlvNode *tlvHead, StartAbilityCallba
 
 int32_t ReplyMsgHandler(const TlvNode *tlvHead)
 {
+    int32_t ret = UnMarshallInt32(tlvHead, REPLY_ERR_CODE);
+    HILOGD("[ReplyMsgHandler ret = %d]", ret);
+    InvokeCallback(NULL, ret);
     CloseDMSSession();
-    return UnMarshallUint64(tlvHead, REPLY_ERR_CODE);
 }
