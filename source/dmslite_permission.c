@@ -193,8 +193,8 @@ static int32_t GetAppIdFromBms(const CallerInfo *callerInfo, char *appId, uint32
 
 int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len)
 {
-    if ((appId == NULL) || (len == 0)) {
-        HILOGE("[appId is invalid]");
+    if ((callerInfo == NULL) || (appId == NULL) || (len == 0)) {
+        HILOGE("[invalid parameter]");
         return DMS_EC_INVALID_PARAMETER;
     }
 #ifndef APP_PLATFORM_WATCHGT
