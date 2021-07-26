@@ -25,7 +25,7 @@
 #include "dmslite_utils.h"
 #include "securec.h"
 
-#define PACKET_DATA_SIZE 256
+#define PACKET_DATA_SIZE 1024
 #define TLV_LENGTH_SHIFT_BITS 7
 #define LOW_BIT_MASK   0x7F
 #define HIGH_BIT_MASK   0x80
@@ -172,6 +172,9 @@ static bool StringToHex(const char *stringValue)
 
 static uint8_t EncodeLengthOfTlv(uint16_t length)
 {
+    if (g_counter >= PACKET_DATA_SIZE) {
+        return PACKET_DATA_SIZE;
+    }
     uint8_t bytesNum = MIN_BYTE_NUM_OF_LENGTH_FILED;
     g_buffer[g_counter] = ((length >> TLV_LENGTH_SHIFT_BITS) & LOW_BIT_MASK);
     if (g_buffer[g_counter]) {

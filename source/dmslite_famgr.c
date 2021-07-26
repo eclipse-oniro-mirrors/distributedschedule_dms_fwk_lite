@@ -34,7 +34,7 @@
 
 static int32_t FillRequestData(RequestData *reqdata, const Want *want,
     const CallerInfo *callerInfo, const IDmsListener *callback);
-static void FreeRequestData(const Want *want, const CallerInfo *callerInfo);
+static void FreeRequestData(const Want *want, CallerInfo *callerInfo);
 static int32_t MarshallDmsMessage(const Want *want, const CallerInfo *callerInfo);
 
 int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
@@ -56,11 +56,14 @@ int32_t StartRemoteAbilityInner(const Want *want, const CallerInfo *callerInfo,
         return DMS_EC_FAILURE;
     }
     if (memset_s(reqdata, sizeof(RequestData), 0x00, sizeof(RequestData)) != EOK) {
+        DMS_FREE(reqdata);
         HILOGE("[RequestData memset failed]");
         return DMS_EC_FAILURE;
     }
 
     if (FillRequestData(reqdata, want, callerInfo, callback) != 0) {
+        FreeRequestData(reqdata->want, reqdata->callerInfo);
+        DMS_FREE(reqdata);
         HILOGE("[FillRequestData failed]");
         return DMS_EC_FAILURE;
     }
@@ -147,7 +150,24 @@ static int32_t FillCallerInfoData(RequestData *reqdata, const CallerInfo *caller
         return DMS_EC_FAILURE;
     }
     callerData->uid = callerInfo->uid;
-    reqdata->callerInfo = callerData;
+
+    if (callerInfo->bundleName != NULL) {
+        int32_t size = strlen(callerInfo->bundleName + 1);
+        char *data = (char *)DMS_ALLOC(size);
+        if (data == NULL) {
+            return DMS_EC_FAILURE;
+        }
+        if (memset_s(data, size, 0x00, size) != EOK) {
+            DMS_FREE(data);
+            HILOGE("[CallerInfo memset error]");
+            return DMS_EC_FAILURE;
+        }
+        if (memcpy_s(data, size, callerInfo->bundleName, size) != EOK) {
+            return DMS_EC_FAILURE;
+        }
+        callerData->bundleName = data;
+    }
+    reqdata->callerInfo = (IDmsListener *)callerData;
     return DMS_EC_SUCCESS;
 }
 
@@ -159,12 +179,10 @@ static int32_t FillRequestData(RequestData *reqdata, const Want *want,
         return DMS_EC_FAILURE;
     }
     if (memset_s(wantData, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
-        FreeRequestData(wantData, NULL);
         return DMS_EC_FAILURE;
     }
     ElementName elementData;
     if (memset_s(&elementData, sizeof(ElementName), 0x00, sizeof(ElementName)) != EOK) {
-        FreeRequestData(wantData, NULL);
         return DMS_EC_FAILURE;
     }
     if (!(SetElementBundleName(&elementData, want->element->bundleName)
@@ -174,17 +192,15 @@ static int32_t FillRequestData(RequestData *reqdata, const Want *want,
         HILOGE("[FillRequestData error]");
         ClearElement(&elementData);
         ClearWant(wantData);
-        FreeRequestData(wantData, NULL);
         return DMS_EC_FAILURE;
     }
     if (want->data != NULL && want->dataLength > 0) {
         void *data = DMS_ALLOC(want->dataLength);
         if (data == NULL) {
-            FreeRequestData(wantData, NULL);
             return DMS_EC_FAILURE;
         }
         if (memcpy_s(data, want->dataLength, want->data, want->dataLength) != EOK) {
-            FreeRequestData(wantData, NULL);
+            DMS_FREE(data);
             return DMS_EC_FAILURE;
         }
         wantData->data = data;
@@ -194,7 +210,6 @@ static int32_t FillRequestData(RequestData *reqdata, const Want *want,
     reqdata->want = wantData;
 
     if (FillCallerInfoData(reqdata, callerInfo) != DMS_EC_SUCCESS) {
-        FreeRequestData(wantData, NULL);
         return DMS_EC_FAILURE;
     }
 
@@ -202,7 +217,7 @@ static int32_t FillRequestData(RequestData *reqdata, const Want *want,
     return DMS_EC_SUCCESS;
 }
 
-static void FreeRequestData(const Want *want, const CallerInfo *callerInfo)
+static void FreeRequestData(const Want *want, CallerInfo *callerInfo)
 {
     if (want != NULL) {
         ClearWant((Want *)want);
@@ -210,6 +225,7 @@ static void FreeRequestData(const Want *want, const CallerInfo *callerInfo)
     }
 
     if (callerInfo != NULL) {
+        DMS_FREE(callerInfo->bundleName);
         DMS_FREE(callerInfo);
     }
 }

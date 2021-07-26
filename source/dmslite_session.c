@@ -72,7 +72,7 @@ void OnStartAbilityDone(int8_t errCode)
 
 void InitSoftbusService()
 {
-    // CreateDMSSessionServer();
+    CreateDMSSessionServer();
 }
 
 void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
@@ -80,13 +80,17 @@ void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
     HILOGD("[OnBytesReceived dataLen = %d]", dataLen);
     if (data == NULL || dataLen > MAX_DATA_SIZE) {
         HILOGE("[OnBytesReceived param error");
+        InvokeCallback(NULL, DMS_EC_INVALID_PARAMETER);
         return;
     }
     char *message = (char *)DMS_ALLOC(dataLen);
     if (message == NULL) {
+        InvokeCallback(NULL, DMS_EC_FAILURE);
         return;
     }
     if (memcpy_s(message, dataLen, (char *)data, dataLen) != EOK) {
+        DMS_FREE(message);
+        InvokeCallback(NULL, DMS_EC_FAILURE);
         return;
     }
     Request request = {
@@ -97,6 +101,7 @@ void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
     };
     int32_t result = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
     if (result != EC_SUCCESS) {
+        InvokeCallback(NULL, DMS_EC_FAILURE);
         HILOGD("[OnBytesReceived errCode = %d]", result);
     }
 }
@@ -120,6 +125,7 @@ void OnSessionClosed(int32_t sessionId)
     };
     int32_t result = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
     if (result != EC_SUCCESS) {
+        InvokeCallback(NULL, DMS_EC_FAILURE);
         HILOGD("[OnSessionClosed SendRequest errCode = %d]", result);
     }
 }
@@ -128,6 +134,7 @@ void HandleSessionClosed(int32_t sessionId)
 {
     if (g_curSessionId == sessionId && !g_curBusy) {
         g_curSessionId = INVALID_SESSION_ID;
+        g_listener = NULL;
         g_curBusy = false;
     }
 }
@@ -136,6 +143,7 @@ int32_t OnSessionOpened(int32_t sessionId, int result)
 {
     HILOGD("[OnSessionOpened result = %d]", result);
     if (sessionId < 0 || result != 0) {
+        InvokeCallback(NULL, DMS_EC_INVALID_PARAMETER);
         HILOGD("[OnSessionOpened errCode = %d]", result);
         return result;
     }
@@ -148,6 +156,7 @@ int32_t OnSessionOpened(int32_t sessionId, int result)
     };
     int32_t ret = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
     if (ret != EC_SUCCESS) {
+        InvokeCallback(NULL, DMS_EC_FAILURE);
         HILOGD("[OnSessionOpened SendRequest errCode = %d]", ret);
     }
     return ret;
@@ -156,10 +165,12 @@ int32_t OnSessionOpened(int32_t sessionId, int result)
 int32_t HandleSessionOpened(int32_t sessionId)
 {
     if (g_curSessionId != sessionId) {
+        InvokeCallback(NULL, DMS_EC_INVALID_PARAMETER);
         return EC_SUCCESS;
     }
     int32_t ret = SendBytes(g_curSessionId, GetPacketBufPtr(), GetPacketSize());
     if (ret != 0) {
+        InvokeCallback(NULL, DMS_EC_FAILURE);
         HILOGD("[OnSessionOpened SendBytes errCode = %d]", ret);
         CloseDMSSession();
     }
@@ -190,10 +201,6 @@ int32_t SendDmsMessage(char *data, int32_t len, const char *deviceId, const IDms
         return EC_FAILURE;
     }
 
-    if (g_curBusy && IsTimeOut() && g_curSessionId >= 0) {
-        CloseDMSSession();
-    }
-
     if (g_curBusy) {
         HILOGE("[SendDmsMessage busy]");
         return EC_FAILURE;
@@ -209,8 +216,8 @@ int32_t SendDmsMessage(char *data, int32_t len, const char *deviceId, const IDms
     g_curSessionId = OpenSession(DMS_SESSION_NAME, DMS_SESSION_NAME, deviceId, DMS_MODULE_NAME, &attr);
     if (g_curSessionId < 0) {
         g_curSessionId = INVALID_SESSION_ID;
-        g_curBusy = false;
         g_listener = NULL;
+        g_curBusy = false;
         return EC_FAILURE;
     }
     return EC_SUCCESS;
@@ -220,8 +227,8 @@ void CloseDMSSession()
 {
     CloseSession(g_curSessionId);
     g_curSessionId = INVALID_SESSION_ID;
-    g_curBusy = false;
     g_listener = NULL;
+    g_curBusy = false;
 }
 
 void InvokeCallback(const void *data, int32_t result)
@@ -241,5 +248,9 @@ static bool IsTimeOut()
 
 bool IsDmsBusy()
 {
+    if (g_curBusy && IsTimeOut() && g_curSessionId >= 0) {
+        CloseDMSSession();
+    }
+
     return g_curBusy;
 }
