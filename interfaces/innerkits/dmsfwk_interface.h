@@ -44,6 +44,14 @@ typedef enum {
     DMS_EC_START_ABILITY_ASYNC_FAILURE = 12,
     DMS_EC_FAILURE = 13,
     DMS_EC_INVALID_PARAMETER = 14,
+    DMS_REC_UNKNOWN_COMMAND_ID = 29360300,
+    DMS_REC_PARSER_TLV_FAIL = 29360301,
+    DMS_REC_PERMISSION_DENIED = 29360302,
+    DMS_REC_OPEN_SESSION_FAIL = 29360303,
+    DMS_REC_DEVICE_BUSY = 29360304,
+    DMS_REC_PACKET_MARSHALL_FAIL = 29360305,
+    DMS_REC_PACKET_UNMARSHALL_FAIL = 29360306,
+    DMS_REC_FREEINSTALL_FAIL = 29360307,
 } DmsLiteCommonErrorCode;
 
 typedef struct {
@@ -52,6 +60,7 @@ typedef struct {
 
 typedef struct {
     int32_t uid;
+    char* bundleName;
 } CallerInfo;
 
 typedef struct {

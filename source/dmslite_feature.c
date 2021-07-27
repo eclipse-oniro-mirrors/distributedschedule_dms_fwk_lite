@@ -21,6 +21,7 @@
 
 #include "ohos_init.h"
 #include "samgr_lite.h"
+#include "securec.h" 
 
 #define EMPTY_FEATURE_NAME ""
 
@@ -80,11 +81,15 @@ static BOOL OnMessage(Feature *feature, Request *request)
     /* process for a specific feature-level msgId can be added below */
     switch (request->msgId) {
         case START_REMOTE_ABILITY: {
-            if (request->data != NULL) {
-                const RequestData *data = (const RequestData *)request->data;
-                StartRemoteAbility(data->want, data->callerInfo, data->callback);
-            } else {
+            if (request->data == NULL) {
+                InvokeCallback(NULL, DMS_EC_FAILURE);
                 HILOGE("[START_REMOTE_ABILITY request is NULL]");
+                return FALSE;
+            }
+            const RequestData *data = (const RequestData *)request->data;
+            int32_t result = StartRemoteAbility(data->want, data->callerInfo, data->callback);
+            if (result != EOK) {
+                InvokeCallback(NULL, result);
             }
             break;
         }
