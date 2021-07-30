@@ -31,7 +31,7 @@ if (ohos_kernel_type == "liteos_a" || ohos_kernel_type == "linux") {
       "source/dmslite_famgr.c",
       "source/dmslite_feature.c",
       "source/dmslite_msg_handler.c",
-      "source/dmslite_pack.c",
+      "source/dmslite_packet.c",
       "source/dmslite_parser.c",
       "source/dmslite_permission.c",
       "source/dmslite_session.c",
