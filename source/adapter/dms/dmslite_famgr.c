@@ -17,7 +17,7 @@
 
 #include "dmslite.h"
 #include "dmslite_log.h"
-#include "dmslite_pack.h"
+#include "dmslite_packet.h"
 #include "dmslite_session.h"
 #include "dmslite_utils.h"
 

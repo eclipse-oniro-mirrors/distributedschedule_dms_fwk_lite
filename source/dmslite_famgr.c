@@ -19,7 +19,7 @@
 
 #include "dmslite_feature.h"
 #include "dmslite_log.h"
-#include "dmslite_pack.h"
+#include "dmslite_packet.h"
 #include "dmslite_permission.h"
 #include "dmslite_session.h"
 #include "dmslite_tlv_common.h"
@@ -136,7 +136,7 @@ static int32_t MarshallDmsMessage(const Want *want, const CallerInfo *callerInfo
     return EOK;
 }
 
-static int32_t FillCallerInfoData(RequestData *reqdata, const CallerInfo *callerInfo)
+static int32_t FillCallerInfo(RequestData *reqdata, const CallerInfo *callerInfo)
 {
     if (callerInfo == NULL || reqdata == NULL) {
         return DMS_EC_FAILURE;
@@ -146,28 +146,30 @@ static int32_t FillCallerInfoData(RequestData *reqdata, const CallerInfo *caller
         return DMS_EC_FAILURE;
     }
     if (memset_s(callerData, sizeof(CallerInfo), 0x00, sizeof(CallerInfo)) != EOK) {
+        DMS_FREE(callerData);
         HILOGE("[CallerInfo memset error]");
         return DMS_EC_FAILURE;
     }
-    callerData->uid = callerInfo->uid;
+    reqdata->callerInfo = callerData;
 
+    callerData->uid = callerInfo->uid;
     if (callerInfo->bundleName != NULL) {
-        int32_t size = strlen(callerInfo->bundleName + 1);
+        int32_t size = strlen(callerInfo->bundleName) + 1;
         char *data = (char *)DMS_ALLOC(size);
         if (data == NULL) {
+            DMS_FREE(data);
             return DMS_EC_FAILURE;
         }
         if (memset_s(data, size, 0x00, size) != EOK) {
             DMS_FREE(data);
-            HILOGE("[CallerInfo memset error]");
             return DMS_EC_FAILURE;
         }
         if (memcpy_s(data, size, callerInfo->bundleName, size) != EOK) {
+            DMS_FREE(data);
             return DMS_EC_FAILURE;
         }
         callerData->bundleName = data;
     }
-    reqdata->callerInfo = (IDmsListener *)callerData;
     return DMS_EC_SUCCESS;
 }
 
@@ -179,8 +181,11 @@ static int32_t FillRequestData(RequestData *reqdata, const Want *want,
         return DMS_EC_FAILURE;
     }
     if (memset_s(wantData, sizeof(Want), 0x00, sizeof(Want)) != EOK) {
+        DMS_FREE(wantData);
         return DMS_EC_FAILURE;
     }
+    reqdata->want = wantData;
+
     ElementName elementData;
     if (memset_s(&elementData, sizeof(ElementName), 0x00, sizeof(ElementName)) != EOK) {
         return DMS_EC_FAILURE;
@@ -207,9 +212,8 @@ static int32_t FillRequestData(RequestData *reqdata, const Want *want,
         wantData->dataLength = want->dataLength;
     }
     ClearElement(&elementData);
-    reqdata->want = wantData;
 
-    if (FillCallerInfoData(reqdata, callerInfo) != DMS_EC_SUCCESS) {
+    if (FillCallerInfo(reqdata, callerInfo) != DMS_EC_SUCCESS) {
         return DMS_EC_FAILURE;
     }
 

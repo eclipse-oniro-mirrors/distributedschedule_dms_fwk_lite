@@ -22,7 +22,7 @@
 #include "dmsfwk_interface.h"
 #include "dmslite_feature.h"
 #include "dmslite_log.h"
-#include "dmslite_pack.h"
+#include "dmslite_packet.h"
 #include "dmslite_parser.h"
 #include "dmslite_utils.h"
 
@@ -234,6 +234,9 @@ void CloseDMSSession()
 void InvokeCallback(const void *data, int32_t result)
 {
     if (g_listener == NULL) {
+        return;
+    }
+    if (g_listener->OnResultCallback == NULL) {
         return;
     }
     g_listener->OnResultCallback(data, result);

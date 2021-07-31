@@ -47,7 +47,7 @@ static inline void TlvByteToLength(uint8_t byte, uint16_t *len)
 }
 
 static TlvErrorCode TlvBytesToLength(const uint8_t *bytesBuffer, uint16_t bufLength,
-                                     uint16_t *length, uint8_t *bytesNumber)
+    uint16_t *length, uint8_t *bytesNumber)
 {
     uint8_t bytesNum = 0;
     uint16_t len = 0;
@@ -78,7 +78,7 @@ static TlvErrorCode TlvBytesToLength(const uint8_t *bytesBuffer, uint16_t bufLen
 }
 
 static TlvErrorCode TlvFillNode(const uint8_t *byteBuffer, uint16_t bufLength,
-                                TlvNode *node, uint16_t *actualHandledLen)
+    TlvNode *node, uint16_t *actualHandledLen)
 {
     if (bufLength <= TLV_TYPE_LEN) {
         HILOGE("[Bad bufLength %d]", bufLength);

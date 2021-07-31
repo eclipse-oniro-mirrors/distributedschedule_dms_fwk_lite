@@ -18,7 +18,7 @@
 #include "ability_manager.h"
 #include "dmsfwk_interface.h"
 #include "dmslite_famgr.h"
-#include "dmslite_pack.h"
+#include "dmslite_packet.h"
 #include "dmslite_parser.h"
 #include "dmslite_tlv_common.h"
 

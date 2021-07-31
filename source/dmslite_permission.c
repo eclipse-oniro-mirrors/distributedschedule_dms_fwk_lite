@@ -201,7 +201,7 @@ int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len)
     if (callerInfo->uid <= MAX_NATIVE_SERVICE_UID) {
         char filePath[MAX_FILE_PATH_LEN] = {0};
         int32_t ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s%s%d%s", NATIVE_APPID_DIR, APPID_FILE_PREFIX,
-                                callerInfo->uid, APPID_FILE_SUFFIX);
+            callerInfo->uid, APPID_FILE_SUFFIX);
         if (ret < 0) {
             HILOGE("[filePath sprintf failed]");
             return DMS_EC_FAILURE;
