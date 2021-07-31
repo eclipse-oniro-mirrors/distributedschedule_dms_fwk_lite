@@ -242,7 +242,7 @@ static int32_t Parse(const uint8_t *payload, uint16_t length, TlvNode **head)
 
 static bool CanCall()
 {
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
     uid_t callerUid = getuid();
     /* only foundation and xts (shell-enabled mode only) is reasonable to call ProcessCommuMsg directly */
     if (callerUid != FOUNDATION_UID && callerUid != SHELL_UID) {

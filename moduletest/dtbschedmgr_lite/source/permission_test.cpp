@@ -32,7 +32,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace DistributedSchedule {
 namespace {
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
 const int32_t MAX_APPID_LEN = 512;
 const int32_t NON_EXISTENT_UID = 12345;
 const char NATIVE_APPID_DIR[] = "/system/native_appid/";
@@ -53,7 +53,7 @@ protected:
     virtual void TearDown() { }
 };
 
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
 /**
  * @tc.name: GetAppId_001
  * @tc.desc: Get appId failed with invalid appId pointer or length

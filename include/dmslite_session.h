@@ -30,7 +30,7 @@ void InitSoftbusService();
 
 int32_t CreateDMSSessionServer();
 int32_t CloseDMSSessionServer();
-int32_t SendDmsMessage(char *data, int32_t len, const char *deviceId, const IDmsListener *callback);
+int32_t SendDmsMessage(const char *data, int32_t len, const char *deviceId, IDmsListener *callback);
 int32_t OpenDMSSession();
 void CloseDMSSession();
 void InvokeCallback(const void *data, int32_t result);
