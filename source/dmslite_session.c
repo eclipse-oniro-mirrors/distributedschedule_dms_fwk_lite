@@ -193,7 +193,7 @@ int32_t CloseDMSSessionServer()
     return RemoveSessionServer(DMS_MODULE_NAME, DMS_SESSION_NAME);
 }
 
-int32_t SendDmsMessage(char *data, int32_t len, const char *deviceId, const IDmsListener *callback)
+int32_t SendDmsMessage(const char *data, int32_t len, const char *deviceId, IDmsListener *callback)
 {
     HILOGI("[SendMessage]");
     if (data == NULL || len > MAX_DATA_SIZE) {

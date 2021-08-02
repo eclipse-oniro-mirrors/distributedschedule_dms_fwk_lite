@@ -77,13 +77,13 @@ int32_t StartRemoteAbilityInner(const Want *want, const CallerInfo *callerInfo,
     int32_t result = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
     if (result != EC_SUCCESS) {
         FreeRequestData(reqdata->want, reqdata->callerInfo);
+        DMS_FREE(reqdata);
         HILOGD("[StartRemoteAbilityInner SendRequest errCode = %d]", result);
     }
     return result;
 }
 
-int32_t StartRemoteAbility(const Want *want, const CallerInfo *callerInfo,
-    const IDmsListener *callback)
+int32_t StartRemoteAbility(const Want *want, CallerInfo *callerInfo, IDmsListener *callback)
 {
     HILOGI("[StartRemoteAbility]");
     if (want == NULL || want->element == NULL || callerInfo == NULL) {

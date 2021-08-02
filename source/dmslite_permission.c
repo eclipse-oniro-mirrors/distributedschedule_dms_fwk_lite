@@ -22,7 +22,7 @@
 
 #include "dmslite_log.h"
 
-#ifdef APP_PLATFORM_WATCHGT
+#ifdef WEARABLE_PRODUCT
 #include "bundle_manager.h"
 #else
 #include "bundle_inner_interface.h"
@@ -32,7 +32,7 @@
 
 #define DELIMITER_LENGTH 1
 #define GET_BUNDLE_WITHOUT_ABILITIES 0
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
 #define NATIVE_APPID_DIR "/system/native_appid/"
 #define APPID_FILE_PREFIX "uid_"
 #define APPID_FILE_SUFFIX "_appid"
@@ -40,7 +40,7 @@
 #define MAX_NATIVE_SERVICE_UID 99
 #endif
 
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
 static bool GetBmsInterface(struct BmsServerProxy **bmsInterface)
 {
     IUnknown *iUnknown = SAMGR_GetInstance()->GetFeatureApi(BMS_SERVICE, BMS_FEATURE);
@@ -72,7 +72,7 @@ int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
     }
 
     int32_t errCode;
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
     uid_t callerUid = getuid();
     if (callerUid == FOUNDATION_UID) {
         /* inner-process mode */
@@ -152,7 +152,7 @@ static int32_t GetAppIdFromBms(const CallerInfo *callerInfo, char *appId, uint32
         return DMS_EC_FAILURE;
     }
     int32_t errCode;
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
     char *bundleName = NULL;
     uid_t callerUid = getuid();
     if (callerUid == FOUNDATION_UID) {
@@ -197,7 +197,7 @@ int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len)
         HILOGE("[invalid parameter]");
         return DMS_EC_INVALID_PARAMETER;
     }
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
     if (callerInfo->uid <= MAX_NATIVE_SERVICE_UID) {
         char filePath[MAX_FILE_PATH_LEN] = {0};
         int32_t ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s%s%d%s", NATIVE_APPID_DIR, APPID_FILE_PREFIX,
