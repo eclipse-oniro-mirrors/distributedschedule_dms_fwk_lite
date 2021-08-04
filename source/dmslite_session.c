@@ -48,8 +48,7 @@ static void OnSessionClosed(int32_t sessionId);
 static int32_t OnSessionOpened(int32_t sessionId, int result);
 static void OnMessageReceived(int sessionId, const void *data, unsigned int len);
 
-static bool IsTimeOut();
-
+static bool IsTimeout();
 static void OnStartAbilityDone(int8_t errCode);
 
 static ISessionListener g_sessionCallback = {
@@ -101,6 +100,7 @@ void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
     };
     int32_t result = SAMGR_SendRequest((const Identity*)&(GetDmsLiteFeature()->identity), &request, NULL);
     if (result != EC_SUCCESS) {
+        DMS_FREE(message);
         InvokeCallback(NULL, DMS_EC_FAILURE);
         HILOGD("[OnBytesReceived errCode = %d]", result);
     }
@@ -139,7 +139,7 @@ void HandleSessionClosed(int32_t sessionId)
     }
 }
 
-int32_t OnSessionOpened(int32_t sessionId, int result)
+int32_t OnSessionOpened(int32_t sessionId, int32_t result)
 {
     HILOGD("[OnSessionOpened result = %d]", result);
     if (sessionId < 0 || result != 0) {
@@ -178,7 +178,7 @@ int32_t HandleSessionOpened(int32_t sessionId)
     return ret;
 }
 
-void OnMessageReceived(int sessionId, const void *data, unsigned int len)
+void OnMessageReceived(int32_t sessionId, const void *data, uint32_t len)
 {
     return;
 }
@@ -242,16 +242,16 @@ void InvokeCallback(const void *data, int32_t result)
     g_listener->OnResultCallback(data, result);
 }
 
-static bool IsTimeOut()
+static bool IsTimeout()
 {
     time_t now = time(NULL);
-    HILOGI("[IsTimeOut diff %f]", difftime(now, g_begin));
+    HILOGI("[IsTimeout diff %f]", difftime(now, g_begin));
     return ((int)difftime(now, g_begin)) - TIMEOUT >= 0;
 }
 
 bool IsDmsBusy()
 {
-    if (g_curBusy && IsTimeOut() && g_curSessionId >= 0) {
+    if (g_curBusy && IsTimeout() && g_curSessionId >= 0) {
         CloseDMSSession();
     }
 

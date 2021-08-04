@@ -46,7 +46,7 @@ int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone);
 
 int32_t StartRemoteAbility(const Want *want, CallerInfo *callerInfo, IDmsListener *callback);
-
+void FreeRequestData(const Want *want, CallerInfo *callerInfo);
 int32_t StartRemoteAbilityInner(const Want *want, const CallerInfo *callerInfo,
     const IDmsListener *callback);
 #ifdef __cplusplus

@@ -88,7 +88,8 @@ static BOOL OnMessage(Feature *feature, Request *request)
             }
             const RequestData *data = (const RequestData *)request->data;
             int32_t result = StartRemoteAbility(data->want, data->callerInfo, data->callback);
-            if (result != EOK) {
+            FreeRequestData(data->want, data->callerInfo);
+            if (result != DMS_EC_SUCCESS) {
                 InvokeCallback(NULL, result);
             }
             break;
