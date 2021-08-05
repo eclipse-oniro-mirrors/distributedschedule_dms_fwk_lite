@@ -69,11 +69,6 @@ void OnStartAbilityDone(int8_t errCode)
     HILOGD("[onStartAbilityDone errCode = %d]", errCode);
 }
 
-void InitSoftbusService()
-{
-    CreateDMSSessionServer();
-}
-
 void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
 {
     HILOGD("[OnBytesReceived dataLen = %d]", dataLen);
@@ -201,8 +196,8 @@ int32_t SendDmsMessage(const char *data, int32_t len, const char *deviceId, IDms
         return EC_FAILURE;
     }
 
-    if (g_curBusy) {
-        HILOGE("[SendDmsMessage busy]");
+    if (CreateDMSSessionServer() != EC_SUCCESS) {
+        HILOGE("[CreateDMSSessionServer error]");
         return EC_FAILURE;
     }
 

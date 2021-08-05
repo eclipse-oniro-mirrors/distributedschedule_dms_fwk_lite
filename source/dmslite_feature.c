@@ -63,8 +63,6 @@ static void OnInitialize(Feature *feature, Service *parent, Identity identity)
     }
 
     ((DmsLite*) feature)->identity = identity;
-
-    InitSoftbusService();
 }
 
 static void OnStop(Feature *feature, Identity identity)
