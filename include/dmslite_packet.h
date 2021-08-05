@@ -38,7 +38,7 @@ bool MarshallInt64(int64_t field, FieldType fieldType);
 bool MarshallString(const char* field, uint8_t type);
 bool MarshallRawData(const void *field, uint8_t type, uint16_t length);
 uint16_t GetPacketSize();
-char* GetPacketBufPtr();
+const char* GetPacketBufPtr();
 void CleanBuild();
 
 #ifdef __cplusplus

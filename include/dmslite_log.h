@@ -27,7 +27,7 @@ extern "C" {
 #define DMSLITE_LABEL "[DMSLITE]"
 #define NEW_LINE "\n"
 
-#ifdef APP_PLATFORM_WATCHGT
+#ifdef WEARABLE_PRODUCT
 #define DMSLITE_LOG(LEVEL, fmt, ...)
 #else
 #define DMSLITE_LOG(LEVEL, fmt, ...) \

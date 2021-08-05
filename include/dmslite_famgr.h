@@ -37,7 +37,7 @@ typedef struct {
 
 /**
 * @brief Starts ability from remote
-* @param bundleName callee bundle name, e.g. com.huawei.helloworld
+* @param bundleName callee bundle name, e.g. ohos.distributedschedule.helloworld
 * @param abilityName callee ability name, e.g. MainAbility
 * @param onStartAbilityDone called when ability started done
 * @return DmsLiteCommonErrorCode
@@ -45,9 +45,8 @@ typedef struct {
 int32_t StartAbilityFromRemote(const char *bundleName, const char *abilityName,
     StartAbilityCallback onStartAbilityDone);
 
-int32_t StartRemoteAbility(const Want *want, const CallerInfo *callerInfo,
-    const IDmsListener *callback);
-
+int32_t StartRemoteAbility(const Want *want, CallerInfo *callerInfo, IDmsListener *callback);
+void FreeRequestData(const Want *want, CallerInfo *callerInfo);
 int32_t StartRemoteAbilityInner(const Want *want, const CallerInfo *callerInfo,
     const IDmsListener *callback);
 #ifdef __cplusplus

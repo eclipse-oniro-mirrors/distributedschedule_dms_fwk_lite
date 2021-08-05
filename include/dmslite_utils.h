@@ -17,7 +17,7 @@
 #define OHOS_DISTRIBUTEDSCHEDULE_DMSLITE_UTILS_H
 
 #include <stdbool.h>
-#ifdef APP_PLATFORM_WATCHGT
+#ifdef WEARABLE_PRODUCT
 #include "ohos_mem_pool.h"
 #endif
 
@@ -51,22 +51,22 @@ static inline bool IsBigEndian()
     return (c.b == 0);
 }
 
-#ifdef APP_PLATFORM_WATCHGT
+#ifdef WEARABLE_PRODUCT
 #define DMS_ALLOC(size) OhosMalloc(MEM_TYPE_APPFMK_LSRAM, size)
 #define DMS_FREE(a) \
     do { \
-        if (a != NULL) { \
-            (void) OhosFree((void *)a); \
-            a = NULL; \
+        if ((a) != NULL) { \
+            (void) OhosFree((void *)(a)); \
+            (a) = NULL; \
         } \
     } while (0)
 #else
 #define DMS_ALLOC(size) malloc(size)
 #define DMS_FREE(a) \
     do { \
-        if (a != NULL) { \
-            (void) free((void *)a); \
-            a = NULL; \
+        if ((a) != NULL) { \
+            (void) free((void *)(a)); \
+            (a) = NULL; \
         } \
     } while (0)
 #endif

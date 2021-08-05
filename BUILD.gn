@@ -31,7 +31,7 @@ if (ohos_kernel_type == "liteos_a" || ohos_kernel_type == "linux") {
       "source/dmslite_famgr.c",
       "source/dmslite_feature.c",
       "source/dmslite_msg_handler.c",
-      "source/dmslite_pack.c",
+      "source/dmslite_packet.c",
       "source/dmslite_parser.c",
       "source/dmslite_permission.c",
       "source/dmslite_session.c",
@@ -62,7 +62,6 @@ if (ohos_kernel_type == "liteos_a" || ohos_kernel_type == "linux") {
     public_deps = [
       "${aafwk_lite_path}/frameworks/abilitymgr_lite:aafwk_abilityManager_lite",
       "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-      "//base/security/huks/frameworks/huks_lite/source:huks",
       "//foundation/communication/dsoftbus/sdk:softbus_client",
       "//foundation/distributedschedule/samgr_lite/samgr:samgr",
       "//third_party/bounds_checking_function:libsec_shared",

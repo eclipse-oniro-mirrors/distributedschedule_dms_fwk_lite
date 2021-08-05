@@ -46,4 +46,5 @@ int32_t ReplyMsgHandler(const TlvNode *tlvHead)
     HILOGD("[ReplyMsgHandler ret = %d]", ret);
     InvokeCallback(NULL, ret);
     CloseDMSSession();
+    return ret;
 }

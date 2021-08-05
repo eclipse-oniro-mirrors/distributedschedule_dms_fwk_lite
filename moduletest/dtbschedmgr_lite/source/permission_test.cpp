@@ -32,7 +32,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace DistributedSchedule {
 namespace {
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
 const int32_t MAX_APPID_LEN = 512;
 const int32_t NON_EXISTENT_UID = 12345;
 const char NATIVE_APPID_DIR[] = "/system/native_appid/";
@@ -53,7 +53,7 @@ protected:
     virtual void TearDown() { }
 };
 
-#ifndef APP_PLATFORM_WATCHGT
+#ifndef WEARABLE_PRODUCT
 /**
  * @tc.name: GetAppId_001
  * @tc.desc: Get appId failed with invalid appId pointer or length
@@ -71,6 +71,7 @@ HWTEST_F(PermissionTest, GetAppId_001, TestSize.Level1)
     EXPECT_EQ(GetAppId(&callerInfo, appId1, MAX_APPID_LEN), DMS_EC_INVALID_PARAMETER);
     char appId2[MAX_APPID_LEN] = {0};
     EXPECT_EQ(GetAppId(&callerInfo, appId2, 0), DMS_EC_INVALID_PARAMETER);
+    EXPECT_EQ(GetAppId(nullptr, appId2, MAX_APPID_LEN), DMS_EC_INVALID_PARAMETER);
 }
 
 /**
@@ -96,10 +97,13 @@ HWTEST_F(PermissionTest, GetAppId_002, TestSize.Level1)
 HWTEST_F(PermissionTest, GetAppId_003, TestSize.Level1)
 {
     bool isDirExist = true;
-    if (opendir(NATIVE_APPID_DIR) == nullptr) {
+    DIR *dir = opendir(NATIVE_APPID_DIR);
+    if (dir == nullptr) {
         mode_t mode = 0700;
         EXPECT_EQ(mkdir(NATIVE_APPID_DIR, mode), 0);
         isDirExist = false;
+    } else {
+        closedir(dir);
     }
     CallerInfo callerInfo;
     callerInfo.uid = FOUNDATION_UID;

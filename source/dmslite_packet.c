@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "dmslite_pack.h"
+#include "dmslite_packet.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -25,7 +25,7 @@
 #include "dmslite_utils.h"
 #include "securec.h"
 
-#define PACKET_DATA_SIZE 256
+#define PACKET_DATA_SIZE 1024
 #define TLV_LENGTH_SHIFT_BITS 7
 #define LOW_BIT_MASK   0x7F
 #define HIGH_BIT_MASK   0x80
@@ -36,14 +36,14 @@
 #define ONE_BYTE_LENGTH   1
 #define TYPE_FILED_LENGTH  1
 
-#define MIN_BYTE_NUM_OF_LENGTH_FILED   1
-#define MAX_BYTE_NUM_OF_LENGTH_FILED   2
+#define MIN_BYTE_NUM   1
+#define MAX_BYTE_NUM   2
 
 static char g_buffer[PACKET_DATA_SIZE] = { 0 };
-static uint8_t g_counter = 0;
+static uint16_t g_counter = 0;
 
 static bool StringToHex(const char *stringValue);
-static uint8_t EncodeLengthOfTlv(uint16_t length);
+static void EncodeLengthOfTlv(uint16_t length);
 static uint64_t ConvertIntLittle2Big(const uint8_t *dataIn, uint8_t typeSize);
 static bool MarshallInt(uint64_t field, FieldType fieldType, uint8_t fieldSize);
 static void IntToHex(uint64_t value, uint8_t typeSize);
@@ -111,7 +111,7 @@ uint16_t GetPacketSize()
     return g_counter;
 }
 
-char* GetPacketBufPtr()
+const char* GetPacketBufPtr()
 {
     return g_buffer;
 }
@@ -124,14 +124,14 @@ bool MarshallString(const char *field, uint8_t type)
 
     // one more byte for '\0'
     size_t sz = strlen(field) + 1;
-    IntToHex(type, sizeof(uint8_t));
-    uint8_t bytesNum = EncodeLengthOfTlv(sz);
-    if (g_counter + (TYPE_FILED_LENGTH + bytesNum + sz) > PACKET_DATA_SIZE) {
+    if (g_counter + (TYPE_FILED_LENGTH + MAX_BYTE_NUM + sz) > PACKET_DATA_SIZE) {
         HILOGE("MarshallString field is too big to fit");
         return false;
     }
-    StringToHex(field);
 
+    IntToHex(type, sizeof(uint8_t));
+    EncodeLengthOfTlv(sz);
+    StringToHex(field);
     return true;
 }
 
@@ -141,12 +141,13 @@ bool MarshallRawData(const void *field, uint8_t type, uint16_t length)
         return false;
     }
 
-    IntToHex(type, sizeof(uint8_t));
-    uint8_t bytesNum = EncodeLengthOfTlv(length);
-    if (g_counter + (TYPE_FILED_LENGTH + bytesNum + length) > PACKET_DATA_SIZE) {
+    if (g_counter + (TYPE_FILED_LENGTH + MAX_BYTE_NUM + length) > PACKET_DATA_SIZE) {
         HILOGE("MarshallString field is too big to fit");
         return false;
     }
+
+    IntToHex(type, sizeof(uint8_t));
+    EncodeLengthOfTlv(length);
     for (uint32_t i = 0; i < length; i++) {
         char ch = ((const char *)field)[i];
         g_buffer[g_counter++] = ch;
@@ -170,20 +171,14 @@ static bool StringToHex(const char *stringValue)
     return true;
 }
 
-static uint8_t EncodeLengthOfTlv(uint16_t length)
+static void EncodeLengthOfTlv(uint16_t length)
 {
-    uint8_t bytesNum = MIN_BYTE_NUM_OF_LENGTH_FILED;
     g_buffer[g_counter] = ((length >> TLV_LENGTH_SHIFT_BITS) & LOW_BIT_MASK);
     if (g_buffer[g_counter]) {
         char highByte = (char)((uint8_t)g_buffer[g_counter] | HIGH_BIT_MASK);
         g_buffer[g_counter++] = highByte;
-        g_buffer[g_counter++] = (length & LOW_BIT_MASK);
-        bytesNum = MAX_BYTE_NUM_OF_LENGTH_FILED;
-    } else {
-        g_buffer[g_counter++] = (length & LOW_BIT_MASK);
     }
-
-    return bytesNum;
+    g_buffer[g_counter++] = (length & LOW_BIT_MASK);
 }
 
 static void IntToHex(uint64_t value, uint8_t typeSize)
@@ -221,12 +216,13 @@ static bool MarshallInt(uint64_t field, FieldType fieldType, uint8_t fieldSize)
         return false;
     }
 
-    IntToHex(fieldType, sizeof(uint8_t));
-    uint8_t bytesNum = EncodeLengthOfTlv(fieldSize);
-    if (g_counter + (TYPE_FILED_LENGTH + bytesNum + fieldSize) > PACKET_DATA_SIZE) {
+    if (g_counter + (TYPE_FILED_LENGTH + MAX_BYTE_NUM + fieldSize) > PACKET_DATA_SIZE) {
         HILOGE("MarshallInt field is too big to fit");
         return false;
     }
+
+    IntToHex(fieldType, sizeof(uint8_t));
+    EncodeLengthOfTlv(fieldSize);
     IntToHex(IsBigEndian() ? field : ConvertIntLittle2Big((uint8_t*)&field, fieldSize), fieldSize);
     return true;
 }
