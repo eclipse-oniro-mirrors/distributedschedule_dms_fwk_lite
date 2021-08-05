@@ -40,13 +40,12 @@ char* GetCallerSignature(const char *remoteName, BundleInfo *bundleInfo);
 char* GetRemoteSignature(const char *remoteName, BundleInfo *bundleInfo);
 
 /**
-* @brief Get appId
+* @brief Get caller bundle info from bms or file
 * @param callerInfo caller information, which includes uid and bundleName
-* @param appId application id, which uniquely identifies an application
-* @param len length of appId
+* @param bundleInfo bundle information of caller
 * @return DmsLiteCommonErrorCode
 */
-int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len);
+int32_t GetCallerBundleInfo(const CallerInfo *callerInfo, BundleInfo *bundleInfo);
 
 #ifdef __cplusplus
 #if __cplusplus

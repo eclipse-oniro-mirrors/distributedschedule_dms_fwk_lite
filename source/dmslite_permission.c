@@ -20,13 +20,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "dmslite_log.h"
-
 #ifdef WEARABLE_PRODUCT
 #include "bundle_manager.h"
 #else
 #include "bundle_inner_interface.h"
 #endif
+#include "dmslite_log.h"
+#include "dmslite_utils.h"
 #include "samgr_lite.h"
 #include "securec.h"
 
@@ -102,6 +102,7 @@ int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
     /* appId: bundleName + "_" + signature */
     const char *calleeSignature = bundleInfo.appId + strlen(permissionCheckInfo->calleeBundleName)
         + DELIMITER_LENGTH;
+    ClearBundleInfo(&bundleInfo);
     if ((permissionCheckInfo->callerSignature == NULL) || (calleeSignature == NULL)) {
         HILOGE("[Signature is null]");
         return DMS_EC_FAILURE;
@@ -115,7 +116,7 @@ int32_t CheckRemotePermission(const PermissionCheckInfo *permissionCheckInfo)
     return DMS_EC_SUCCESS;
 }
 
-static int32_t GetAppIdFromFile(const char *filePath, char *appId, uint32_t len)
+static int32_t GetBundleInfoFromFile(const char *filePath, BundleInfo *bundleInfo)
 {
     int32_t fd = open(filePath, O_RDONLY, S_IRUSR);
     if (fd < 0) {
@@ -123,8 +124,8 @@ static int32_t GetAppIdFromFile(const char *filePath, char *appId, uint32_t len)
         return DMS_EC_FAILURE;
     }
     int32_t fileLen = lseek(fd, 0, SEEK_END);
-    if ((fileLen <=0) || (fileLen >= len)) {
-        HILOGE("[fileLen is invalid or larger than available space, fileLen=%d]", fileLen);
+    if (fileLen <= 0) {
+        HILOGE("[fileLen is invalid, fileLen=%d]", fileLen);
         close(fd);
         return DMS_EC_FAILURE;
     }
@@ -134,23 +135,34 @@ static int32_t GetAppIdFromFile(const char *filePath, char *appId, uint32_t len)
         close(fd);
         return DMS_EC_FAILURE;
     }
-    ret = read(fd, appId, fileLen);
-    if (ret < 0) {
-        HILOGE("[read appId failed, ret=%d]", ret);
+    int32_t appIdLen = fileLen + 1;
+    char *appId = (char *)DMS_ALLOC(appIdLen);
+    if (appId == NULL) {
+        HILOGE("[DMS_ALLOC appId failed]");
         close(fd);
         return DMS_EC_FAILURE;
     }
+    (void)memset_s(appId, appIdLen, 0x00, appIdLen);
+    ret = read(fd, appId, fileLen);
+    if (ret < 0) {
+        HILOGE("[read appId failed, ret=%d]", ret);
+        DMS_FREE(appId);
+        close(fd);
+        return DMS_EC_FAILURE;
+    }
+    for (; fileLen > 0; --fileLen) {
+        if (appId[fileLen - 1] != '\n') {
+            break;
+        }
+    }
+    appId[fileLen] = '\0';
+    bundleInfo->appId = appId;
     close(fd);
     return DMS_EC_SUCCESS;
 }
 
-static int32_t GetAppIdFromBms(const CallerInfo *callerInfo, char *appId, uint32_t len)
+static int32_t GetBundleInfoFromBms(const CallerInfo *callerInfo, BundleInfo *bundleInfo)
 {
-    BundleInfo bundleInfo;
-    if (memset_s(&bundleInfo, sizeof(BundleInfo), 0x00, sizeof(BundleInfo)) != EOK) {
-        HILOGE("[bundleInfo memset failed]");
-        return DMS_EC_FAILURE;
-    }
     int32_t errCode;
 #ifndef WEARABLE_PRODUCT
     char *bundleName = NULL;
@@ -166,34 +178,31 @@ static int32_t GetAppIdFromBms(const CallerInfo *callerInfo, char *appId, uint32
             HILOGE("[GetBundleNameForUid failed]");
             return DMS_EC_FAILURE;
         }
-        errCode = bmsServerProxy->GetBundleInfo(bundleName, GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+        errCode = bmsServerProxy->GetBundleInfo(bundleName, GET_BUNDLE_WITHOUT_ABILITIES, bundleInfo);
     } else if (callerUid == SHELL_UID) {
         /* inter-process mode (mainly called in xts testsuit process started by shell) */
         if (GetBundleNameForUid(callerInfo->uid, &bundleName) != EC_SUCCESS) {
             HILOGE("[GetBundleNameForUid failed]");
             return DMS_EC_FAILURE;
         }
-        errCode = GetBundleInfo(bundleName, GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+        errCode = GetBundleInfo(bundleName, GET_BUNDLE_WITHOUT_ABILITIES, bundleInfo);
     } else {
         errCode = DMS_EC_FAILURE;
     }
+    DMS_FREE(bundleName);
 #else
-    errCode = GetBundleInfo(callerInfo->bundleName, GET_BUNDLE_WITHOUT_ABILITIES, &bundleInfo);
+    errCode = GetBundleInfo(callerInfo->bundleName, GET_BUNDLE_WITHOUT_ABILITIES, bundleInfo);
 #endif
     if (errCode != EC_SUCCESS) {
         HILOGE("[GetBundleInfo failed]");
         return DMS_EC_GET_BUNDLEINFO_FAILURE;
     }
-    if (strcpy_s(appId, len, bundleInfo.appId) != EOK) {
-        HILOGE("[appId strcpy failed]");
-        return DMS_EC_FAILURE;
-    }
     return DMS_EC_SUCCESS;
 }
 
-int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len)
+int32_t GetCallerBundleInfo(const CallerInfo *callerInfo, BundleInfo *bundleInfo)
 {
-    if ((callerInfo == NULL) || (appId == NULL) || (len == 0)) {
+    if ((callerInfo == NULL) || (bundleInfo == NULL)) {
         HILOGE("[invalid parameter]");
         return DMS_EC_INVALID_PARAMETER;
     }
@@ -206,8 +215,9 @@ int32_t GetAppId(const CallerInfo *callerInfo, char *appId, uint32_t len)
             HILOGE("[filePath sprintf failed]");
             return DMS_EC_FAILURE;
         }
-        return GetAppIdFromFile(filePath, appId, len);
+        bundleInfo->uid = callerInfo->uid;
+        return GetBundleInfoFromFile(filePath, bundleInfo);
     }
 #endif
-    return GetAppIdFromBms(callerInfo, appId, len);
+    return GetBundleInfoFromBms(callerInfo, bundleInfo);
 }
