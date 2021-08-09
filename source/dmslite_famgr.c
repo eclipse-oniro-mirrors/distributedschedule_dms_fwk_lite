@@ -30,7 +30,6 @@
 #include "securec.h"
 
 #define DMS_VERSION_VALUE 200
-#define MAX_APPID_LEN 256
 #define ENDING_SYMBOL_LEN 1
 
 static int32_t FillRequestData(RequestData *reqdata, const Want *want,
@@ -117,13 +116,18 @@ static int32_t MarshallDmsMessage(const Want *want, const CallerInfo *callerInfo
     PACKET_MARSHALL_HELPER(String, CALLEE_BUNDLE_NAME, want->element->bundleName);
     PACKET_MARSHALL_HELPER(String, CALLEE_ABILITY_NAME, want->element->abilityName);
 
-    char appId[MAX_APPID_LEN + ENDING_SYMBOL_LEN] = {0};
-    int32_t ret = GetAppId(callerInfo, appId, MAX_APPID_LEN);
+    BundleInfo bundleInfo = {0};
+    int32_t ret = GetCallerBundleInfo(callerInfo, &bundleInfo);
     if (ret != DMS_EC_SUCCESS) {
-        HILOGI("[StartRemoteAbility GetAppID error = %d]", ret);
+        HILOGE("[StartRemoteAbility GetCallerBundleInfo error = %d]", ret);
         return DMS_EC_FAILURE;
     }
-    PACKET_MARSHALL_HELPER(String, CALLER_SIGNATURE, appId);
+    if (!MarshallString(bundleInfo.appId, CALLER_SIGNATURE)) {
+        HILOGE("[StartRemoteAbility Marshall appId failed]");
+        ClearBundleInfo(&bundleInfo);
+        return DMS_EC_FAILURE;
+    }
+    ClearBundleInfo(&bundleInfo);
 
     if (want->data != NULL && want->dataLength > 0) {
         RAWDATA_MARSHALL_HELPER(RawData, CALLER_PAYLOAD, want->data, want->dataLength);
@@ -158,7 +162,7 @@ static int32_t FillCallerInfo(RequestData *reqdata, const CallerInfo *callerInfo
             DMS_FREE(data);
             return DMS_EC_FAILURE;
         }
-        data[size] = '\0';
+        data[size - ENDING_SYMBOL_LEN] = '\0';
         callerData->bundleName = data;
     }
     return DMS_EC_SUCCESS;
