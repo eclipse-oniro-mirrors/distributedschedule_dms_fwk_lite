@@ -26,8 +26,6 @@ extern "C" {
 #endif
 #endif
 
-void InitSoftbusService();
-
 int32_t CreateDMSSessionServer();
 int32_t CloseDMSSessionServer();
 int32_t SendDmsMessage(const char *data, int32_t len, const char *deviceId, IDmsListener *callback);
