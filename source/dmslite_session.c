@@ -34,7 +34,7 @@
 #define DMS_MODULE_NAME "dms"
 
 #define INVALID_SESSION_ID (-1)
-#define MAX_DATA_SIZE 256
+#define MAX_DATA_SIZE 1024
 #define TIMEOUT 60
 
 static int32_t g_curSessionId = INVALID_SESSION_ID;
@@ -228,6 +228,7 @@ void CloseDMSSession()
 
 void InvokeCallback(const void *data, int32_t result)
 {
+    g_curBusy = false;
     if (g_listener == NULL) {
         return;
     }
