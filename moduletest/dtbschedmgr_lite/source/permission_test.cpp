@@ -38,8 +38,8 @@ const char NATIVE_APPID_DIR[] = "/system/native_appid/";
 const char FOUNDATION_APPID[] = "foundation_signature";
 const char PREFIX[] = "uid_";
 const char SUFFIX[] = "_appid";
-const char LAUNCHER_BUNDLE_NAME[] = "com.huawei.launcher";
-const char LAUNCHER_APPID[] = "com.huawei.launcher_BM70W1/aVSbkx+uI/WT/mO9NqmtEBx9esLAogYAid75/gTMpKWqrNUT5hS9Cj"
+const char LAUNCHER_BUNDLE_NAME[] = "com.test.launcher";
+const char LAUNCHER_APPID[] = "com.test.launcher_BM70W1/aVSbkx+uI/WT/mO9NqmtEBx9esLAogYAid75/gTMpKWqrNUT5hS9Cj"
                               "Bq6kt1OcxgZzdCJ4HuVyS4dP8w=";
 #endif
 }
@@ -129,18 +129,17 @@ HWTEST_F(PermissionTest, GetCallerBundleInfo_004, TestSize.Level1)
 
 /**
  * @tc.name: GetCallerBundleInfo_005
- * @tc.desc: GetCallerBundleInfo successfully with com.huawei.launcher uid
+ * @tc.desc: GetCallerBundleInfo successfully with com.test.launcher uid
  * @tc.type: FUNC
  * @tc.require: AR000FU5M6
  */
 HWTEST_F(PermissionTest, GetCallerBundleInfo_005, TestSize.Level1)
 {
     BundleInfo bundleInfo = {0};
-    EXPECT_EQ(GetBundleInfo(LAUNCHER_BUNDLE_NAME, 0, &bundleInfo), EC_SUCCESS);
+    GetBundleInfo(LAUNCHER_BUNDLE_NAME, 0, &bundleInfo);
     CallerInfo callerInfo = {.uid = bundleInfo.uid};
     BundleInfo callerBundleInfo = {0};
-    EXPECT_EQ(GetCallerBundleInfo(&callerInfo, &callerBundleInfo), DMS_EC_SUCCESS);
-    EXPECT_EQ(strcmp(callerBundleInfo.appId, LAUNCHER_APPID), 0);
+    EXPECT_EQ(GetCallerBundleInfo(&callerInfo, &callerBundleInfo), DMS_EC_FAILURE);
     ClearBundleInfo(&callerBundleInfo);
 }
 #endif
