@@ -1,0 +1,55 @@
+{
+    "name": "@ohos/distributedschedule_dms_fwk_lite",
+    "description": "distributed abiltiy manager service",
+    "homePage": "https://gitee.com/openharmony",
+    "version": "3.1",
+    "license": "Apache License 2.0",
+    "repository": "https://gitee.com/openharmony/distributedschedule_dms_fwk_lite",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "foundation/distributedschedule/dmsfwk_lite"
+    },
+    "dirs": {},
+    "scripts": {},
+    "component": {
+        "name": "dmsfwk_lite",
+        "subsystem": "distributedschedule",
+        "adapted_system_type": [
+            "small"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [
+            "utils_base",
+            "hilog",
+            "samgr_lite",
+            "aafwk_lite",
+            "appexecfwk_lite",
+            "softbus_lite",
+            "huks"
+            ],
+            "third_party": [
+                "bounds_checking_function",
+                "cJSON"
+            ]
+        },
+        "build": {
+            "sub_component": [
+                "//foundation/distributedschedule/dmsfwk_lite:dtbschedmgr",
+                "//foundation/distributedschedule/dmsfwk_lite/moduletest/dtbschedmgr_lite:distributed_schedule_test_dms_door"
+            ],
+            "inner_kits": [
+                {
+                    "header": {
+                        "header_base": "foundation/distributedschedule/dmsfwk_lite/interfaces/innerkits/",
+                        "header_files": [
+                            "dmsfwk_interface.h"
+                        ]
+                    },
+                    "name": "//foundation/distributedschedule/dmsfwk_lite:dtbschedmgr"
+                }
+            ]
+        }
+    }
+}
