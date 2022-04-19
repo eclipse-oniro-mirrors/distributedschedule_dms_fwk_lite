@@ -58,7 +58,7 @@ static TlvErrorCode TlvBytesToLength(const uint8_t *bytesBuffer, uint16_t bufLen
         TlvByteToLength(bytesBuffer[i], &len);
         bytesNum++;
         if (IsNextTlvLength(bytesBuffer[i])) {
-            HILOGD("[bytesNum = %d, byte = %x]", bytesNum, bytesBuffer[i]);
+            HILOGD("[bytesNum = %hhu, byte = %x]", bytesNum, bytesBuffer[i]);
             break;
         }
         if (bytesNum >= TLV_MAX_LENGTH_BYTES) {
@@ -81,7 +81,7 @@ static TlvErrorCode TlvFillNode(const uint8_t *byteBuffer, uint16_t bufLength,
     TlvNode *node, uint16_t *actualHandledLen)
 {
     if (bufLength <= TLV_TYPE_LEN) {
-        HILOGE("[Bad bufLength %d]", bufLength);
+        HILOGE("[Bad bufLength %hu]", bufLength);
         return DMS_TLV_ERR_LEN;
     }
 
@@ -142,7 +142,7 @@ static inline TlvErrorCode CheckNodeSequence(const TlvNode *lastNode, const TlvN
         return DMS_TLV_SUCCESS;
     }
     if (lastNode->type >= curNode->type) {
-        HILOGE("[Bad node type sequence '%d' is expected but '%d' appears]",
+        HILOGE("[Bad node type sequence '%hhu' is expected but '%hhu' appears]",
             lastNode->type, curNode->type);
         return DMS_TLV_ERR_OUT_OF_ORDER;
     }
@@ -170,7 +170,7 @@ TlvErrorCode TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TlvNo
     }
     /* bufLength is longer than TLV_TYPE_LEN + 1(means length should be at least 1 byte) */
     if (bufLength <= (TLV_TYPE_LEN + 1)) {
-        HILOGE("[Bad Length %d]", bufLength);
+        HILOGE("[Bad Length %hu]", bufLength);
         return DMS_TLV_ERR_LEN;
     }
 
@@ -203,7 +203,7 @@ TlvErrorCode TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TlvNo
             break;
         }
 
-        HILOGD("[curNode length:%d type:%d handledNodeNum:%d]", curNode->length,
+        HILOGD("[curNode length:%hu type:%hhu handledNodeNum:%hhu]", curNode->length,
             curNode->type, handledNodeNum);
         /* if all is ok, then move to the T part of the next tlv node */
         nodeStartAddr += curTlvNodeLen;
@@ -229,7 +229,7 @@ TlvErrorCode TlvBytesToNode(const uint8_t *byteBuffer, uint16_t bufLength, TlvNo
 static int32_t Parse(const uint8_t *payload, uint16_t length, TlvNode **head)
 {
     if (length > MAX_DMS_MSG_LENGTH) {
-        HILOGE("[Bad parameters][length = %d]", length);
+        HILOGE("[Bad parameters][length = %hu]", length);
         return DMS_TLV_ERR_PARAM;
     }
 
@@ -246,7 +246,7 @@ static bool CanCall()
     uid_t callerUid = getuid();
     /* only foundation and xts (shell-enabled mode only) is reasonable to call ProcessCommuMsg directly */
     if (callerUid != FOUNDATION_UID && callerUid != SHELL_UID) {
-        HILOGD("[Caller uid is not allowed, uid = %d]", callerUid);
+        HILOGD("[Caller uid is not allowed, uid = %u]", callerUid);
         return false;
     }
 #endif
@@ -274,7 +274,7 @@ int32_t ProcessCommuMsg(const CommuMessage *commuMessage, const IDmsFeatureCallb
     }
 
     uint16_t commandId = UnMarshallUint16(tlvHead, COMMAND_ID);
-    HILOGI("[ProcessCommuMsg commandId %d]", commandId);
+    HILOGI("[ProcessCommuMsg commandId %hu]", commandId);
     switch (commandId) {
         case DMS_MSG_CMD_START_FA: {
             errCode = StartAbilityFromRemoteHandler(tlvHead, dmsFeatureCallback->onStartAbilityDone);
@@ -285,7 +285,7 @@ int32_t ProcessCommuMsg(const CommuMessage *commuMessage, const IDmsFeatureCallb
             break;
         }
         default: {
-            HILOGW("[Unkonwn command id %d]", commandId);
+            HILOGW("[Unkonwn command id %hu]", commandId);
             errCode = DMS_EC_UNKNOWN_COMMAND_ID;
             break;
         }
