@@ -79,11 +79,11 @@ static uint64_t UnMarshallInt(const TlvNode *tlvHead, uint8_t nodeType, uint8_t 
     }
     TlvNode* tlvNode = GetNodeByType(nodeType, tlvHead);
     if (tlvNode == NULL || tlvNode->value == NULL) {
-        HILOGE("[Bad node type %d]", nodeType);
+        HILOGE("[Bad node type %hhu]", nodeType);
         return 0;
     }
     if (fieldSize != tlvNode->length) {
-        HILOGE("[Mismatched fieldSize=%d while nodeLength=%d]", fieldSize, tlvNode->length);
+        HILOGE("[Mismatched fieldSize=%hhu while nodeLength=%hu]", fieldSize, tlvNode->length);
         return 0;
     }
     return IsBigEndian() ? ConvertIntByDefault(tlvNode->value, fieldSize)
@@ -132,18 +132,18 @@ int64_t UnMarshallInt64(const TlvNode *tlvHead, uint8_t nodeType)
 
 const char* UnMarshallString(const TlvNode *tlvHead, uint8_t nodeType)
 {
-    HILOGI("[Get string value for node %d]", nodeType);
+    HILOGI("[Get string value for node %hhu]", nodeType);
     if (tlvHead == NULL) {
         return "";
     }
     TlvNode* tlvNode = GetNodeByType(nodeType, tlvHead);
     if (tlvNode == NULL || tlvNode->value == NULL) {
-        HILOGE("[Bad node type %d]", nodeType);
+        HILOGE("[Bad node type %hhu]", nodeType);
         return "";
     }
     const char* value = (const char*)tlvNode->value;
     if (value[tlvNode->length - 1] != '\0') {
-        HILOGE("[Non-zero ending string, length:%d, ending:%d]", tlvNode->length, value[tlvNode->length - 1]);
+        HILOGE("[Non-zero ending string, length:%hu, ending:%d]", tlvNode->length, value[tlvNode->length - 1]);
         return "";
     } else {
         return value;
