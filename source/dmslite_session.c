@@ -68,10 +68,10 @@ void OnStartAbilityDone(int8_t errCode)
 {
     HILOGD("[onStartAbilityDone errCode = %d]", errCode);
 }
-
+u
 void OnBytesReceived(int32_t sessionId, const void *data, uint32_t dataLen)
 {
-    HILOGD("[OnBytesReceived dataLen = %d]", dataLen);
+    HILOGD("[OnBytesReceived dataLen = %u]", dataLen);
     if (data == NULL || dataLen > MAX_DATA_SIZE) {
         HILOGE("[OnBytesReceived param error");
         InvokeCallback(NULL, DMS_EC_INVALID_PARAMETER);
